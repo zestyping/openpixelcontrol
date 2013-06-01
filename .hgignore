@@ -1,0 +1,13 @@
+syntax: glob
+bin
+*.pyc
+*.o
+*.lib
+*.a
+*.dll
+*.so
+*.so.*
+*.dylib
+*.exe
+*.out
+*.app
