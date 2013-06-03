@@ -87,7 +87,7 @@ as if it were sent on all channels.
 <p>
 <dfn>Command</dfn>:
 The command code determines the format of the data
-and expected behaviour of the pixel strand.
+and expected behaviour of the pixels.
 Individual commands are defined below.
 
 <p>
@@ -107,15 +107,16 @@ from 0 to 65535.
 Currently only one command code is defined.
 
 <p>
-<dfn>Set pixels (command 0)</dfn>:
-Sets the values of some pixels in a strand.
+<dfn>Set pixel colours (command 0)</dfn>:
 The data block contains 8-bit RGB values:
 three bytes in red, green, blue order for each pixel to set.
-If the data block has length 3*n, then the first n pixels
-of the specified strand are set.
+If the data block has length 3*n,
+then the first n pixels of the specified channel are set.
 All other pixels are unaffected and retain their existing colour values.
 If the data length is not a multiple of 3,
-or there is data for more pixels than are present
-on the strand, the extra data is ignored.
+or there is data for more pixels than are present, the extra data is ignored.
+(Because the maximum data length is 65535,
+this command can control a maximum of 21845 pixels per channel,
+or a maximum of 5570475 pixels on all 255 channels.)
 
 </div>
