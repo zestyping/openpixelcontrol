@@ -13,11 +13,14 @@ specific language governing permissions and limitations under the License. */
 #include <string.h>
 #include "opc.h"
 
+#define MAX_PIXELS (65535/3)
+#define MAX_INPUT_LENGTH (MAX_PIXELS*8)
+
 int main(int argc, char** argv) {
-  int address;
-  char buffer[240000];
+  int channel;
+  char buffer[MAX_INPUT_LENGTH];
   char* token;
-  pixel pixels[60000];
+  pixel pixels[MAX_PIXELS];
   int c, chars;
   u32 hex;
   u16 count;
@@ -33,9 +36,9 @@ int main(int argc, char** argv) {
 
   s = opc_new_sink(argv[1]);
   buffer[0] = 0;
-  while (s >= 0 && fgets(buffer, 240000, stdin)) {
+  while (s >= 0 && fgets(buffer, MAX_INPUT_LENGTH, stdin)) {
     c = 0;
-    if (!sscanf(buffer, "%d%n", &address, &c) || !c) {
+    if (!sscanf(buffer, "%d%n", &channel, &c) || !c) {
       continue;
     }
     count = 0;
@@ -57,7 +60,7 @@ int main(int argc, char** argv) {
       count++;
       token = strtok(NULL, " \t\r\n");
     }
-    printf("<- address %d: %d pixel%s", address, count, count == 1 ? "" : "s");
+    printf("<- channel %d: %d pixel%s", channel, count, count == 1 ? "" : "s");
     sep = ":";
     for (i = 0; i < count; i++) {
       if (i >= 4) {
@@ -68,7 +71,7 @@ int main(int argc, char** argv) {
       sep = ",";
     }
     printf("\n");
-    opc_put_pixels(s, address, count, pixels);
+    opc_put_pixels(s, channel, count, pixels);
     buffer[0] = 0;
   }
 }

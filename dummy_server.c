@@ -12,10 +12,10 @@ specific language governing permissions and limitations under the License. */
 #include <stdio.h>
 #include "opc.h"
 
-void handler(u8 address, u16 count, pixel* pixels) {
+void handler(u8 channel, u16 count, pixel* pixels) {
   int i = 0;
   char* sep = " =";
-  printf("-> address %d: %d pixel%s", address, count, count == 1 ? "" : "s");
+  printf("-> channel %d: %d pixel%s", channel, count, count == 1 ? "" : "s");
   for (i = 0; i < count; i++) {
     if (i >= 4) {
       printf(", ...");

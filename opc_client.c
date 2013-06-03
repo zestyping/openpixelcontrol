@@ -191,7 +191,7 @@ static u8 opc_send(opc_sink sink, const u8* data, ssize_t len, u32 timeout_ms) {
   return 1;
 }
 
-u8 opc_put_pixels(opc_sink sink, u8 address, u16 count, pixel* pixels) {
+u8 opc_put_pixels(opc_sink sink, u8 channel, u16 count, pixel* pixels) {
   u8 header[4];
   ssize_t len;
 
@@ -201,7 +201,7 @@ u8 opc_put_pixels(opc_sink sink, u8 address, u16 count, pixel* pixels) {
   }
   len = count * 3;
 
-  header[0] = address;
+  header[0] = channel;
   header[1] = OPC_SET_PIXELS;
   header[2] = len >> 8;
   header[3] = len & 0xff;

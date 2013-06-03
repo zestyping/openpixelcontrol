@@ -200,10 +200,10 @@ void keyboard(unsigned char key, int x, int y) {
   if (key == '\x1b' || key == 'q') exit(0);
 }
 
-void handler(u8 address, u16 count, pixel* p) {
+void handler(u8 channel, u16 count, pixel* p) {
   int i = 0;
   char* sep = " =";
-  printf("-> address %d: %d pixel%s", address, count, count == 1 ? "" : "s");
+  printf("-> channel %d: %d pixel%s", channel, count, count == 1 ? "" : "s");
   for (i = 0; i < count; i++) {
     if (i >= 4) {
       printf(", ...");
