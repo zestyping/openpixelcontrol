@@ -33,8 +33,9 @@ ping<img src="at9.png" alt="&#64;">zesty<img src="dot9.png" alt="&#46;">ca</div>
 for controlling arrays of RGB lights,
 such as <a href="http://coolneon.com/">Total Control Lighting</a> LEDs.
 
-<p>There is a reference implementation of the protocol at
-<a href="http://github.com/zestyping/openpixelcontrol">github.com/zestyping/openpixelcontrol</a>.
+<p>See
+<a href="http://github.com/zestyping/openpixelcontrol">github.com/zestyping/openpixelcontrol</a>
+for an OPC client, server, and simulator.
 
 <h2>Overview</h2>
 
@@ -81,8 +82,8 @@ Up to 255 separate strands of pixels can be controlled.
 Each strand is given a channel number from 1 to 255
 and listens for messages with that channel number.
 Messages with channel 0 are considered broadcast messages;
-all strands should treat a message with channel 0
-as if it were sent on all channels.
+all receivers should treat a message with channel 0
+as if it were sent on all 255 channels.
 
 <p>
 <dfn>Command</dfn>:
@@ -115,8 +116,8 @@ then the first n pixels of the specified channel are set.
 All other pixels are unaffected and retain their existing colour values.
 If the data length is not a multiple of 3,
 or there is data for more pixels than are present, the extra data is ignored.
-(Because the maximum data length is 65535,
+Because the maximum data length is 65535,
 this command can control a maximum of 21845 pixels per channel,
-or a maximum of 5570475 pixels on all 255 channels.)
+or a maximum of 5570475 pixels on all 255 channels.
 
 </div>
