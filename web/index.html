@@ -1,0 +1,121 @@
+<!doctype html public "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<title>Open Pixel Control</title>
+<link rel=stylesheet href="style.css">
+<style type="text/css">#about { color: #eee; }
+.flag { font-weight: bold; width: 1em; }
+.type { color: #a24; }
+.tag { font-weight: normal; }
+.date { font-size: 80%; padding: 0 0.3em; color: #888; border-left: 1px solid #ccc; }
+.comment { color: #888; }
+tr { vertical-align: baseline; }
+th { text-align: left; font-weight: normal; }
+table { font-size: 100%; border-collapse: collapse; }
+td { padding: 3px 6px; border: 1px solid #666; width: 5em; white-space: nowrap; }
+td.header { background: #fdd; }
+td.data { background: #ddd; }
+</style>
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-16545993-6', 'openpixelcontrol.org');
+ga('send', 'pageview');
+</script>
+</head><body>
+<div class="header"><h1>Open Pixel Control</h1>
+ping<img src="at9.png" alt="&#64;">zesty<img src="dot9.png" alt="&#46;">ca</div>
+<div class="content">
+
+<p>Open Pixel Control (OPC) is a simple protocol
+for controlling arrays of RGB lights,
+such as <a href="http://coolneon.com/">Total Control Lighting</a> LEDs.
+
+<p>There is a reference implementation of the protocol at
+<a href="http://github.com/zestyping/openpixelcontrol">github.com/zestyping/openpixelcontrol</a>.
+
+<h2>Overview</h2>
+
+<p>OPC describes the format of a stream of bytes,
+typically sent over a TCP connection,
+to control an array of RGB lights (pixels).
+The pixels are assumed to be arranged in strands,
+where each pixel has a fixed index in its strand.
+
+<p>
+If you program a light controller to emit OPC messages,
+it will be independent of the particular choice of lighting hardware.
+The goal of OPC is to let you can program a controller once
+and use it effortlessly with many kinds of lighting hardware,
+including simulators that you can use to test your controller
+before wiring it to real lights.
+
+<h2>Specification</h2>
+
+<p>
+An OPC stream consists of a sequence of <dfn>messages</dfn>.
+Each message has a 4-byte header followed by a variable-length data block:
+
+<p>
+<table>
+  <tr>
+    <td class="header">channel</td>
+    <td class="header">command</td>
+    <td class="header" colspan=2>length (n)</td>
+    <td class="data">data</td>
+  </tr>
+  <tr>
+    <td class="header">0 to 255</td>
+    <td class="header">0 to 255</td>
+    <td class="header">high byte</td>
+    <td class="header">low byte</td>
+    <td class="data">n bytes of message data</td>
+  </tr>
+</table>
+
+<p>
+<dfn>Channel</dfn>:
+Up to 255 separate strands of pixels can be controlled.
+Each strand is given a channel number from 1 to 255
+and listens for messages with that channel number.
+Messages with channel 0 are considered broadcast messages;
+all strands should treat a message with channel 0
+as if it were sent on all channels.
+
+<p>
+<dfn>Command</dfn>:
+The command code determines the format of the data
+and expected behaviour of the pixel strand.
+Individual commands are defined below.
+
+<p>
+<dfn>Length</dfn>:
+The message data block can have any length from 0 to 65535,
+transmitted as an unsigned two-byte number with the high byte first.
+
+<p>
+<dfn>Data</dfn>:
+The data block must contain
+exactly the number of bytes indicated by the length field,
+from 0 to 65535.
+
+<h2>Commands</h2>
+
+<p>
+Currently only one command code is defined.
+
+<p>
+<dfn>Set pixels (command 0)</dfn>:
+Sets the values of some pixels in a strand.
+The data block contains 8-bit RGB values:
+three bytes in red, green, blue order for each pixel to set.
+If the data block has length 3*n, then the first n pixels
+of the specified strand are set.
+All other pixels are unaffected and retain their existing colour values.
+If the data length is not a multiple of 3,
+or there is data for more pixels than are present
+on the strand, the extra data is ignored.
+
+</div>

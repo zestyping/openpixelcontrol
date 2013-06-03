@@ -1,0 +1,192 @@
+/* zesty.ca stylesheet. $Id: style.css,v 1.7 2008/07/05 11:15:51 ping Exp $ */
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: lucida grande, verdana, sans-serif;
+    font-size: 12px;
+}
+
+/* Page structure. */
+
+div.header, div.header a, div.footer, div.footer a {
+    color: #fff;
+}
+div.header, div.footer {
+    background-color: #a24;
+    padding: 20px;
+    font-size: 9px;
+}
+div.header {
+    border-bottom: 2px solid black;
+}
+div.footer {
+    padding: 10px 20px;
+    border-top: 1px solid black;
+}
+div.header h1 {
+    margin: 0;
+    padding: 0;
+    font-size: 18px;
+}
+div.header div.parent {
+    float: right;
+}
+div.content {
+    color: #000;
+    background: #eee;
+    padding: 20px;
+    max-width: 60em;
+}
+
+/* Content headings. */
+
+h2 {
+    color: #050;
+    font-size: 16px;
+}
+h3 {
+    color: #050;
+    font-size: 14px;
+}
+body.cv h2 {
+    color: #000;
+    border-bottom: 1px dotted #888;
+    margin-bottom: 0.75em;
+    text-align: left;
+    text-transform: uppercase;
+    font-size: 13px;
+}
+body.cv td.subhead {
+    font-weight: bold;
+    padding-bottom: 0.5em;
+}
+body.cv td.year {
+    width: 7em;
+}
+
+/* Figures. */
+
+div.figure, blockquote {
+    margin-left: 30px;
+    margin-right: 30px;
+}
+blockquote {
+    color: #060;
+}
+blockquote div.attribution:before {
+    content: "\2014";
+}
+blockquote div.attribution {
+    text-align: right;
+    font-style: italic;
+}
+div.figure img {
+    border: 1px solid #aaa;
+    display: inline;
+}
+pre {
+    background: #cdc;
+    border: 1px dotted #aba;
+    margin: 0;
+    padding: 10px;
+}
+div.caption {
+    margin-top: 0.25em;
+    font-size: 10px;
+}
+div.caption span.number {
+    font-weight: bold;
+}
+
+/* Inline styles. */
+
+.note {
+    float: right;
+    background: #fdb;
+    border: 1px dotted #eb8;
+    max-width: 20em;
+    margin: 3px 0 0 6px;
+    padding: 6px;
+    font-size: 10px;
+}
+dfn, dt {
+    color: #800;
+    font-weight: bold;
+    font-style: normal;
+}
+.secbar { font-family: arial, helvetica, sans-serif;
+          background-color: #d0d0ff; padding: 3px }
+.input { font-family: monospace; color: #004080 }
+.output { font-family: monospace; color: #800080 }
+.activity { color: #04a; font-weight: bold; }
+.question { color: #a40 }
+.error { color: #c00000 }
+.lineno { color: #a0a0e0; font-family: courier; font-size: 11px; }
+.popanchor { color: #ff0060; font-weight: bold; cursor: pointer; }
+.tipbox { background-color: #ffffe0; border: 1px solid black; }
+.tip { font-family: arial, helvetica, sans-serif; font-size: 12px; }
+.date { font-family: arial, helvetica, sans-serif; font-size: 80% }
+.hidden { display: none; }
+
+body.cv .title { font-weight: bold; }
+
+/* Separate content blocks by 1em and sections by more. */
+
+p, div.figure, div.activity, div.hidden, blockquote {
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+div.section {
+    margin-top: 2em; /* 2em * 12px body = 1.5em * 16px h2 */
+}
+h2, h3 {
+    margin: 2em 0 0;
+}
+p:first-child, div:first-child, blockquote:first-child,
+h2:first-child, h3:first-child {
+    margin-top: 0;
+}
+p:last-child, div:last-child, blockquote:last-child,
+h2:last-child, h3:last-child {
+    margin-bottom: 0;
+}
+li {
+    margin-top: 1em;
+}
+
+/* For two-column layout, wrap the columns with <div class="main"> and */
+/* <div class="left">, then put a <div class="columns"> around both.   */
+
+div.columns {
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+}
+div.columns div.main {
+    float: left;
+    margin-left: 100px;
+}
+div.columns div.left {
+    float: left;
+    width: 100px;
+    color: #484;
+    background: #020;
+    margin-left: -100%;
+    border-right: 1px solid #000;
+    padding-bottom: 10000px;
+    margin-bottom: -10000px;
+}
+div.columns div.left a {
+    color: #484;
+}
+div.navigation {
+    padding: 20px 10px;
+}
+div.navigation ol, div.navigation ul {
+    margin: 0;
+    padding: 0;
+}
+div.navigation li {
+    list-style: none;
+}
