@@ -17,3 +17,7 @@ bin/
 *.exe
 *.out
 *.app
+
+# Python cruft
+*.pyc
+
