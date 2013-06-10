@@ -20,10 +20,17 @@ Also includes some helper functions to make color manipulations easier:
 
     remap(x, oldmin, oldmax, newmin, newmax)
     clamp(x, min, max)
+    cos(x, offset=0, period=1, minn=0, maxx=1)
+    contrast(color, center, mult)
+    clip_black_by_luminance(color, threshold)
+    clip_black_by_channels(color, threshold)
+    mod_dist(a, b, n)
 
 """
 
+import math
 import socket
+
 
 #-------------------------------------------------------------------------------
 # Communication with Open Pixel Control servers
@@ -70,6 +77,7 @@ def put_pixels(sock, channel, pixels):
     command = ''.join(pieces)
     sock.send(command)
 
+
 #-------------------------------------------------------------------------------
 # Helper functions to make common color manipulations easier
 
@@ -87,4 +95,64 @@ def remap(x, oldmin, oldmax, newmin, newmax):
 def clamp(x, minn, maxx):
     """If float x is outside the range minn-maxx, return minn or maxx."""
     return max(minn, min(maxx, x))
+
+def cos(x, offset=0, period=1, minn=0, maxx=1):
+    """A cosine curve scaled to fit in a 0-1 range and 0-1 domain by default.
+
+    offset: how much to slide the curve across the domain.
+    period: the length of one wave
+    minn, maxx: the output range
+    """
+    value = math.cos((x/period - offset) * math.pi * 2) / 2 + 0.5
+    return value*(maxx-minn) + minn
+
+def contrast(color, center, mult):
+    """Expand the color values by a factor of mult around the pivot value of center.
+
+    color: an (r, g, b) tuple
+    center: a float -- the fixed point
+    mult: a float -- expand or contract the values around the center point
+
+    """
+    r, g, b = color
+    r = (r - center) * mult + center
+    g = (g - center) * mult + center
+    b = (b - center) * mult + center
+    return (r, g, b)
+
+def clip_black_by_luminance(color, threshold):
+    """If the color's luminance is less than threshold, replace it with black.
+    
+    color: an (r, g, b) tuple
+    threshold: a float
+
+    """
+    r, g, b = color
+    if r+g+b < threshold*3:
+        return (0, 0, 0)
+    return (r, g, b)
+
+def clip_black_by_channels(color, threshold):
+    """Replace any r, g, or b value less than threshold with 0.
+
+    color: an (r, g, b) tuple
+    threshold: a float
+
+    """
+    r, g, b = color
+    if r < threshold: r = 0
+    if g < threshold: g = 0
+    if b < threshold: b = 0
+    return (r, g, b)
+
+def mod_dist(a, b, n):
+    """Return the distance between a and b, modulo n.
+
+    a and b can be floats or integers.
+
+    For example, thinking of a clock:
+    mod_dist(11, 1, 12) == 2 because you can "wrap around".
+
+    """
+    return min((a-b) % n, (b-a) % n)
 
