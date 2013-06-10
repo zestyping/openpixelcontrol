@@ -58,8 +58,8 @@ def put_pixels(sock, channel, pixels):
     A socket.error exception will occur if the connection fails.
 
     """
-    len_hi_byte = int( (len(pixels)*3) / 256)
-    len_lo_byte = (len(pixels*3)) % 256
+    len_hi_byte = int(len(pixels)*3 / 256)
+    len_lo_byte = (len(pixels)*3) % 256
     header = chr(channel) + chr(0) + chr(len_hi_byte) + chr(len_lo_byte)
     pieces = [header]
     for r, g, b in pixels:
