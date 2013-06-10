@@ -10,9 +10,9 @@ and a few simple programs:
 
     dummy_server - Receives OPC commands from a client and prints them out.
 
-    gl_server (Mac only) - Receives OPC commands from a client and visualizes
-        the LED pixels in an OpenGL simulator.  Takes a "layout file" that
-        specifies the locations of the LED pixels; each line of the file
+    gl_server (Mac or Linux only) - Receives OPC commands from a client and
+        displays the LED pixels in an OpenGL simulator.  Takes a "layout file"
+        that specifies the locations of the pixels; each line of the file
         gives the (x, y, z) coordinates for a pixel as three floating-point
         numbers separated by spaces.
 
@@ -21,3 +21,6 @@ and a few simple programs:
         connected to the SPI port on a Beaglebone.
 
 To build these programs, run "make" and then look in the bin/ directory.
+
+NOTE: On Linux, "apt-get install mesa-common-dev freeglut3-dev" will get the
+      dependencies you need to run "make".
