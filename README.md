@@ -20,4 +20,19 @@ and a few simple programs:
         Total Control Lighting pixels (see http://coolneon.com/) that are
         connected to the SPI port on a Beaglebone.
 
+    python_clients/raver_plaid.py - Example client which sends rainbow patterns
+
 To build these programs, run "make" and then look in the bin/ directory.
+
+Quickstart
+----------
+
+Compile and start the GL simulator using the example "wall" layout
+
+    make
+    ./bin/gl_server layouts/wall.l
+
+And then in another shell, send colors to the simulator:
+
+    ./python_clients/raver_plaid.py
+
