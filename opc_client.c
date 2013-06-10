@@ -122,6 +122,7 @@ static u8 opc_connect(opc_sink sink, u32 timeout_ms) {
   timeout.tv_usec = timeout_ms % 1000;
   select(sock + 1, NULL, &writefds, NULL, &timeout);
   if (FD_ISSET(sock, &writefds)) {
+    opt_errno = 0;
     getsockopt(sock, SOL_SOCKET, SO_ERROR, &opt_errno, &len);
     if (opt_errno == 0) {
       fprintf(stderr, "OPC: Connected to %s\n", info->address_string);
