@@ -11,7 +11,7 @@ import sys
 
 parser = optparse.OptionParser(description="""Creates a cylinder
 on the z axis extending from -height/2 to height/2.
-n_tall is optional.  If omitted, it will be set to a value that
+n_tall is optional -- it will default to a value that
 creates square pixels.  You can also create circles by setting
 height to 0.
 """)
@@ -23,7 +23,7 @@ parser.add_option('--height', dest='height', default=1,
                     help='height of cylinder.  default = 1')
 parser.add_option('--n_around', dest='n_around', default=32,
                     action='store', type='int',
-                    help='number of pixels around the circumference.  default = 16')
+                    help='number of pixels around the circumference.  default = 32')
 parser.add_option('--n_tall', dest='n_tall',
                     action='store', type='int',
                     help='number of pixels from top to bottom. (optional)')
