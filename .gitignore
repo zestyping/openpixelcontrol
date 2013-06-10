@@ -17,3 +17,9 @@ bin/
 *.exe
 *.out
 *.app
+
+# Python cruft
+*.pyc
+
+# Vim temporary files
+*.swp
