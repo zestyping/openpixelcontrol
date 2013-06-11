@@ -7,13 +7,12 @@ Creates a shifting rainbow plaid pattern by overlaying different sine waves
 in the red, green, and blue channels.
 
 To run:
-
-Step 1: Start the simulator using the included "wall" layout.
+First start the gl simulator using the included "wall" layout
 
     make
     bin/gl_server layouts/wall.json
 
-Step 2: In another terminal, run this script to send colors to the simulator.
+Then run this script in another shell to send colors to the simulator
 
     python_clients/raver_plaid.py
 
