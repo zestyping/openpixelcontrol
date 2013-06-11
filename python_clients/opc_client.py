@@ -25,6 +25,7 @@ Also includes some helper functions to make color manipulations easier:
     clip_black_by_luminance(color, threshold)
     clip_black_by_channels(color, threshold)
     mod_dist(a, b, n)
+    gamma(color, gamma)
 
 """
 
@@ -155,4 +156,9 @@ def mod_dist(a, b, n):
 
     """
     return min((a-b) % n, (b-a) % n)
+
+def gamma(color, gamma):
+    """Apply a gamma curve to the color.  The color values should be in the range 0-1."""
+    r, g, b = color
+    return (max(r,0) ** gamma, max(g,0) ** gamma, max(b,0) ** gamma)
 

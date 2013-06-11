@@ -23,6 +23,7 @@ from __future__ import division
 import time
 import sys
 import optparse
+import random
 try:
     import json
 except ImportError:
@@ -80,32 +81,43 @@ SOCK = opc_client.get_socket(options.server)
 #-------------------------------------------------------------------------------
 # color function
 
-def pixel_color(t, coord, ii, n_pixels):
+def pixel_color(t, coord, ii, n_pixels, random_values):
     """Compute the color of a given pixel.
 
     t: time in seconds since the program started.
     ii: which pixel this is, starting at 0
     coord: the (x, y, z) position of the pixel as a tuple
-    n_pixels: the total number of pixels
 
     Returns an (r, g, b) tuple in the range 0-255
 
     """
-    # make moving stripes for x, y, and z
-    x, y, z = coord
-    r = opc_client.cos(x, offset=t / 4, period=1, minn=0, maxx=0.7)
-    g = opc_client.cos(y, offset=t / 4, period=1, minn=0, maxx=0.7)
-    b = opc_client.cos(z, offset=t / 4, period=1, minn=0, maxx=0.7)
-    r, g, b = opc_client.contrast((r, g, b), 0.5, 2)
 
-    # make a moving white dot showing the order of the pixels in the layout file
-    spark_ii = (t*80) % n_pixels
-    spark_rad = 8
-    spark_val = max(0, (spark_rad - opc_client.mod_dist(ii, spark_ii, n_pixels)) / spark_rad)
-    spark_val = min(1, spark_val*2)
-    r += spark_val
-    g += spark_val
-    b += spark_val
+#     # random persistant color per pixel
+#     r = opc_client.remap(random_values[(ii+0)%n_pixels], 0, 1, 0.2, 1)
+#     g = opc_client.remap(random_values[(ii+3)%n_pixels], 0, 1, 0.2, 1)
+#     b = opc_client.remap(random_values[(ii+6)%n_pixels], 0, 1, 0.2, 1)
+
+    # random assortment of a few colors per pixel: pink, cyan, white
+    if random_values[ii] < 0.5:
+        r, g, b = (1, 0.3, 0.8)
+    elif random_values[ii] < 0.85:
+        r, g, b = (0.4, 0.7, 1)
+    else:
+        r, g, b = (2, 0.6, 1.6)
+
+    # twinkle occasional LEDs
+    twinkle_speed = 0.07
+    twinkle_density = 0.1
+    twinkle = (random_values[ii]*7 + time.time()*twinkle_speed) % 1
+    twinkle = abs(twinkle*2 - 1)
+    twinkle = opc_client.remap(twinkle, 0, 1, -1/twinkle_density, 1.1)
+    twinkle = opc_client.clamp(twinkle, -0.5, 1.1)
+    twinkle **= 5
+    twinkle *= opc_client.cos(t - ii/n_pixels, offset=0, period=7, minn=0.1, maxx=1.0) ** 20
+    twinkle = opc_client.clamp(twinkle, -0.3, 1)
+    r *= twinkle
+    g *= twinkle
+    b *= twinkle
 
     # apply gamma curve
     # only do this on live leds, not in the simulator
@@ -121,10 +133,11 @@ print '    sending pixels forever (control-c to exit)...'
 print
 
 n_pixels = len(coordinates)
+random_values = [random.random() for ii in range(n_pixels)]
 start_time = time.time()
 while True:
     t = time.time() - start_time
-    pixels = [pixel_color(t, coord, ii, n_pixels) for ii, coord in enumerate(coordinates)]
+    pixels = [pixel_color(t*0.6, coord, ii, n_pixels, random_values) for ii, coord in enumerate(coordinates)]
     opc_client.put_pixels(SOCK, 0, pixels)
     time.sleep(1 / options.fps)
 
