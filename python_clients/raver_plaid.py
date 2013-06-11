@@ -10,11 +10,11 @@ To run:
 First start the gl simulator using the included "wall" layout
 
     make
-    ./bin/gl_server layouts/wall.json
+    bin/gl_server layouts/wall.json
 
 Then run this script in another shell to send colors to the simulator
 
-    ./example_clients/raver_plaid.py
+    python_clients/raver_plaid.py
 
 """
 
