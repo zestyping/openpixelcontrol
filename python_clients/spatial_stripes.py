@@ -11,11 +11,11 @@ To run:
 First start the gl simulator using, for example, the included "wall" layout
 
     make
-    ./bin/gl_server layouts/wall.l
+    ./bin/gl_server layouts/wall.json
 
 Then run this script in another shell to send colors to the simulator
 
-    ./example_clients/spatial_stripes.py --layout layouts/wall.l
+    ./example_clients/spatial_stripes.py --layout layouts/wall.json
 
 """
 
@@ -23,6 +23,10 @@ from __future__ import division
 import time
 import sys
 import optparse
+try:
+    import json
+except ImportError:
+    import simplejson as json
 
 import opc_client
 
@@ -58,12 +62,10 @@ print
 print '    parsing layout file'
 print
 
-f = file(options.layout,'r')
 coordinates = []
-for line in f.readlines():
-    line = line.strip()
-    if line.startswith('#'): continue
-    coordinates.append(tuple([float(c) for c in line.split(' ')]))
+for item in json.load(open(options.layout)):
+    if 'point' in item:
+        coordinates.append(tuple(item['point']))
 
 
 #-------------------------------------------------------------------------------
