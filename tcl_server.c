@@ -13,6 +13,7 @@ specific language governing permissions and limitations under the License. */
 #include <linux/spi/spidev.h>
 #include <linux/types.h>
 #include <stdio.h>
+#include <time.h>
 #include <sys/ioctl.h>
 #include "opc.h"
 
