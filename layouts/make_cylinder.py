@@ -39,6 +39,7 @@ options.n_tall = max(1, options.n_tall)
 #-------------------------------------------------------------------------------
 # make cylinder
 
+result = ['[']
 for ii in range(options.n_tall):
     if options.n_tall == 1:
         z = 0
@@ -51,7 +52,13 @@ for ii in range(options.n_tall):
         x = math.sin(theta) * options.radius
         y = math.cos(theta) * options.radius
 
-        print '%.4f %.4f %.4f' % (x, y, z)
+        result.append('  {point: [%.4f, %.4f, %.4f]},' % (x, y, z))
+
+# trim off last comma
+result[-1] = result[-1][:-1]
+
+result.append(']')
+print '\n'.join(result)
 
 sys.stderr.write('\nn_around = %s\n' % options.n_around)
 sys.stderr.write('n_tall = %s\n' % options.n_tall)
