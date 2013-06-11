@@ -94,6 +94,7 @@ void draw_axes() {
   colour g = {0, 0.3, 0};
   colour b = {0, 0, 0.3};
   colour w = {0.3, 0.3, 0.3};
+  glLineWidth(2);
   glBegin(GL_LINES);
   set_colour(w);
   put_vertex(o);
@@ -103,13 +104,13 @@ void draw_axes() {
   put_vertex(o);
   put_vertex(z);
   set_colour(r);
-  put_vertex(o);
+  put_vertex(x);
   put_vertex(multiply(10, x));
   set_colour(g);
-  put_vertex(o);
+  put_vertex(y);
   put_vertex(multiply(10, y));
   set_colour(b);
-  put_vertex(o);
+  put_vertex(z);
   put_vertex(multiply(10, z));
   glEnd();
 }
