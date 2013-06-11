@@ -35,8 +35,11 @@ double start_angle, start_elevation, start_distance;
 int start_x, start_y;
 double orbit_angle = 192.0;  // camera orbit angle, degrees
 double camera_elevation = -15;  // camera elevation angle, degrees
-double camera_distance = 16.0;  // metres
-double camera_aspect = 1.0;
+double camera_distance = 16.0;  // distance from origin, metres
+double camera_aspect = 1.0;  // will be updated to match window aspect ratio
+
+// Shape parameters
+#define SHAPE_THICKNESS 0.06  // thickness of points and lines, metres
 
 // LED colours
 #define MAX_PIXELS 30000
@@ -50,6 +53,7 @@ typedef struct {
 
 colour tmp_colour;
 #define set_colour(c) ((tmp_colour = c), glColor3dv(&(tmp_colour.r)))
+#define set_rgb(r, g, b) (glColor3d(r, g, b))
 colour xfer[256];
 
 // Vector arithmetic
@@ -58,8 +62,8 @@ typedef struct {
 } vector;
 
 vector tmp_vector;
-vector vectors[MAX_PIXELS];
 #define put_vertex(v) ((tmp_vector = v), glVertex3dv(&(tmp_vector.x)))
+#define put_pair(v, w) (put_vertex(v), put_vertex(w))
 
 vector add(vector v, vector w) {
   vector result;
@@ -85,66 +89,98 @@ vector multiply(double f, vector v) {
   return result;
 }
 
+double length(vector v) {
+  return sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
+}
+
+double dot(vector v, vector w) {
+  return v.x*w.x + v.y*w.y + v.z*w.z;
+}
+
+vector cross(vector v, vector w) {
+  vector result;
+  result.x = v.y*w.z - w.y*v.z;
+  result.y = v.z*w.x - w.z*v.x;
+  result.z = v.x*w.y - w.x*v.y;
+  return result;
+}
+
+// Shapes
+typedef struct shape {
+  void (*draw)(struct shape* this, GLUquadric* quad);
+  int index;
+  union {
+    vector point;
+    struct { vector start, end; } line;
+  } g;
+} shape;
+
+#define MAX_SHAPES 30000
+int num_shapes = 0;
+shape shapes[MAX_SHAPES];
+
+void draw_point(shape* this, GLUquadric* quad) {
+  pixel p = pixels[this->index];
+  glColor3d(xfer[p.r].r, xfer[p.g].g, xfer[p.b].b);
+  glPushMatrix();
+  glTranslatef(this->g.point.x, this->g.point.y, this->g.point.z);
+  gluSphere(quad, SHAPE_THICKNESS/2, 6, 3);
+  glPopMatrix();
+}
+
+void draw_line(shape* this, GLUquadric* quad) {
+  pixel p = pixels[this->index];
+  vector start = this->g.line.start;
+  vector delta = subtract(this->g.line.end, this->g.line.start);
+  vector z = {0, 0, 1};
+  vector hinge = cross(z, delta);
+  double len = length(delta);
+  double angle = 180./M_PI * acos(dot(z, delta) / len);
+  glColor3d(xfer[p.r].r, xfer[p.g].g, xfer[p.b].b);
+  glPushMatrix();
+  glTranslated(start.x, start.y, start.z);
+  glRotated(angle, hinge.x, hinge.y, hinge.z);
+  gluSphere(quad, SHAPE_THICKNESS/2, 6, 3);
+  gluCylinder(quad, SHAPE_THICKNESS/2, SHAPE_THICKNESS/2, len, 6, 1);
+  glTranslated(0, 0, len);
+  gluSphere(quad, SHAPE_THICKNESS/2, 6, 3);
+  glPopMatrix();
+}
+
 void draw_axes() {
   vector o = {0, 0, 0};
   vector x = {1, 0, 0};
   vector y = {0, 1, 0};
   vector z = {0, 0, 1};
-  colour r = {0.3, 0, 0};
-  colour g = {0, 0.3, 0};
-  colour b = {0, 0, 0.3};
-  colour w = {0.3, 0.3, 0.3};
+  vector xx = {10, 0, 0};
+  vector yy = {0, 10, 0};
+  vector zz = {0, 0, 10};
+  glLineWidth(2);
   glBegin(GL_LINES);
-  set_colour(w);
-  put_vertex(o);
-  put_vertex(x);
-  put_vertex(o);
-  put_vertex(y);
-  put_vertex(o);
-  put_vertex(z);
-  set_colour(r);
-  put_vertex(o);
-  put_vertex(multiply(10, x));
-  set_colour(g);
-  put_vertex(o);
-  put_vertex(multiply(10, y));
-  set_colour(b);
-  put_vertex(o);
-  put_vertex(multiply(10, z));
-  glEnd();
-}
-
-void draw_octahedron(vector center, double radius) {
-  vector x = {radius, 0, 0};
-  vector y = {0, radius, 0};
-  vector z = {0, 0, radius};
-
-  glBegin(GL_TRIANGLE_FAN);
-  put_vertex(add(center, z));
-  put_vertex(add(center, x));
-  put_vertex(add(center, y));
-  put_vertex(subtract(center, x));
-  put_vertex(subtract(center, y));
-  put_vertex(add(center, x));
-  glEnd();
-  glBegin(GL_TRIANGLE_FAN);
-  put_vertex(subtract(center, z));
-  put_vertex(add(center, x));
-  put_vertex(add(center, y));
-  put_vertex(subtract(center, x));
-  put_vertex(subtract(center, y));
-  put_vertex(add(center, x));
+  set_rgb(0.3, 0.3, 0.3);
+  put_pair(o, x);
+  put_pair(o, y);
+  put_pair(o, z);
+  set_rgb(0.3, 0, 0);
+  put_pair(x, xx);
+  set_rgb(0, 0.3, 0);
+  put_pair(y, yy);
+  set_rgb(0, 0, 0.3);
+  put_pair(z, zz);
   glEnd();
 }
 
 void display() {
   int i;
+  shape* sh;
+
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   draw_axes();
-  for (i = 0; i < num_pixels; i++) {
-    glColor3d(xfer[pixels[i].r].r, xfer[pixels[i].g].g, xfer[pixels[i].b].b);
-    draw_octahedron(vectors[i], 0.05);
+  GLUquadric* quad = gluNewQuadric();
+  for (i = 0, sh = shapes; i < num_shapes; i++, sh++) {
+    sh->draw(sh, quad);
   }
+  gluDeleteQuadric(quad);
   glutSwapBuffers();
 }
 
@@ -223,6 +259,7 @@ void handler(u8 channel, u16 count, pixel* p) {
 }
 
 void idle() {
+  /* A short timeout (20 ms) keeps us responsive to mouse events. */
   opc_receive(source, handler, 20);
 }
 
@@ -249,12 +286,16 @@ void init(char* filename) {
   cJSON* index;
   cJSON* point;
   cJSON* x;
+  cJSON* line;
+  cJSON* start;
+  cJSON* x2;
   int i = 0;
   
   buffer = read_file(filename);
   json = cJSON_Parse(buffer);
   free(buffer);
 
+  num_shapes = 0;
   for (item = json->child, i = 0; item; item = item->next, i++) {
     index = cJSON_GetObjectItem(item, "index");
     if (index) {
@@ -263,10 +304,27 @@ void init(char* filename) {
     point = cJSON_GetObjectItem(item, "point");
     x = point ? point->child : NULL;
     if (x && x->next && x->next->next) {
-      vectors[i].x = x->valuedouble;
-      vectors[i].y = x->next->valuedouble;
-      vectors[i].z = x->next->next->valuedouble;
-      printf("%.2f %.2f %.2f\n", vectors[i].x, vectors[i].y, vectors[i].z);
+      shapes[num_shapes].draw = draw_point;
+      shapes[num_shapes].index = i;
+      shapes[num_shapes].g.point.x = x->valuedouble;
+      shapes[num_shapes].g.point.y = x->next->valuedouble;
+      shapes[num_shapes].g.point.z = x->next->next->valuedouble;
+      num_shapes++;
+    }
+    line = cJSON_GetObjectItem(item, "line");
+    start = line ? line->child : NULL;
+    x = start ? start->child : NULL;
+    x2 = start && start->next ? start->next->child : NULL;
+    if (x && x->next && x->next->next && x2 && x2->next && x2->next->next) {
+      shapes[num_shapes].draw = draw_line;
+      shapes[num_shapes].index = i;
+      shapes[num_shapes].g.line.start.x = x->valuedouble;
+      shapes[num_shapes].g.line.start.y = x->next->valuedouble;
+      shapes[num_shapes].g.line.start.z = x->next->next->valuedouble;
+      shapes[num_shapes].g.line.end.x = x2->valuedouble;
+      shapes[num_shapes].g.line.end.y = x2->next->valuedouble;
+      shapes[num_shapes].g.line.end.z = x2->next->next->valuedouble;
+      num_shapes++;
     }
   }
   num_pixels = i;

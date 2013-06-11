@@ -151,7 +151,7 @@ u8 opc_receive(opc_source source, opc_handler* handler, u32 timeout_ms) {
       info->listen_sock = opc_listen(info->port);
     }
   } else {
-    fprintf(stderr, "OPC: %d ms of inactivity\n", timeout_ms);
+    /* timeout_ms milliseconds passed with no incoming data or connections. */
     return 0;
   }
   return 1;

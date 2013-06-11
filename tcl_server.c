@@ -115,9 +115,10 @@ int main(int argc, char** argv) {
   if (spi_fd < 0) {
     return 1;
   }
-  fprintf(stderr, "SPI speed: %.2f MHz\n", spi_speed_hz*1e-6);
+  fprintf(stderr, "SPI speed: %.2f MHz, ready...\n", spi_speed_hz*1e-6);
   opc_source s = opc_new_source(port);
-  while (s >= 0 && opc_receive(s, handler, 1000));
+  while (s >= 0 && opc_receive(s, handler, 10000));
+  fprintf(stderr, "Exiting after %d ms of inactivity\n", timeout_ms);
 
   t = time(NULL);
   diagnostic_pixel.r = (t % 3 == 0) ? 64 : 0;

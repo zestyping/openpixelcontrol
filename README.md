@@ -2,9 +2,11 @@ openpixelcontrol
 ================
 
 A simple stream protocol for controlling RGB lighting, particularly RGB LEDs.
+See http://openpixelcontrol.org/ for a spec.
 
-This source repository provides a reference implementation of the protocol
-and a few simple programs:
+Using this implementation, you can write your own patterns and animations,
+test them in a simulator, and run them on real RGB light arrays.  This
+repository includes these programs:
 
 * dummy_client: Sends OPC commands for the RGB values that you type in.
 
