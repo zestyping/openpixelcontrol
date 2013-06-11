@@ -12,6 +12,8 @@ specific language governing permissions and limitations under the License. */
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
 #ifdef __APPLE__
 #include <OpenGL/CGLCurrent.h>
 #include <OpenGL/CGLTypes.h>
@@ -21,6 +23,7 @@ specific language governing permissions and limitations under the License. */
 #include <GL/glut.h>
 #endif
 
+#include "cJSON.h"
 #include "opc.h"
 
 opc_source source = -1;
@@ -223,19 +226,50 @@ void idle() {
   opc_receive(source, handler, 20);
 }
 
-void init(char* filename) {
+char* read_file(char* filename) {
   FILE* fp;
-  int i;
+  struct stat st;
+  char* buffer;
 
+  if (stat(filename, &st) != 0) {
+    return strdup("");
+  }
+  buffer = malloc(st.st_size + 1);
   fp = fopen(filename, "r");
-  for (i = 0; ; i++) {
-    if (fscanf(fp, "%lf %lf %lf\n",
-               &(vectors[i].x), &(vectors[i].y), &(vectors[i].z)) < 3) {
-      num_pixels = i;
-      break;
+  fread(buffer, st.st_size, 1, fp);
+  fclose(fp);
+  buffer[st.st_size] = 0;
+  return buffer;
+}
+
+void init(char* filename) {
+  char* buffer;
+  cJSON* json;
+  cJSON* item;
+  cJSON* index;
+  cJSON* point;
+  cJSON* x;
+  int i = 0;
+  
+  buffer = read_file(filename);
+  json = cJSON_Parse(buffer);
+  free(buffer);
+
+  for (item = json->child, i = 0; item; item = item->next, i++) {
+    index = cJSON_GetObjectItem(item, "index");
+    if (index) {
+      i = index->valueint;
+    }
+    point = cJSON_GetObjectItem(item, "point");
+    x = point ? point->child : NULL;
+    if (x && x->next && x->next->next) {
+      vectors[i].x = x->valuedouble;
+      vectors[i].y = x->next->valuedouble;
+      vectors[i].z = x->next->next->valuedouble;
+      printf("%.2f %.2f %.2f\n", vectors[i].x, vectors[i].y, vectors[i].z);
     }
   }
-  fclose(fp);
+  num_pixels = i;
   for (i = 0; i < num_pixels; i++) {
     pixels[i].r = pixels[i].g = pixels[i].b = 1;
   }
@@ -249,7 +283,7 @@ int main(int argc, char** argv) {
 
   glutInit(&argc, argv);
   if (argc < 2) {
-    fprintf(stderr, "Usage: %s <options> <filename.l> [<port>]\n", argv[0]);
+    fprintf(stderr, "Usage: %s <options> <filename.json> [<port>]\n", argv[0]);
     exit(1);
   }
   init(argv[1]);
