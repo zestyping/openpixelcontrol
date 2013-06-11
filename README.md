@@ -12,9 +12,9 @@ and a few simple programs:
 
     gl_server (Mac or Linux only) - Receives OPC commands from a client and
         displays the LED pixels in an OpenGL simulator.  Takes a "layout file"
-        that specifies the locations of the pixels; each line of the file
-        gives the (x, y, z) coordinates for a pixel as three floating-point
-        numbers separated by spaces.
+        that specifies the locations of the pixels in a JSON array; each item
+        in the array should be a JSON object of the form {"point": [x, y, z]}
+        where x, y, z are the coordinates of the pixel in space.
 
     tcl_server - Receives OPC commands from a client and uses them to control
         Total Control Lighting pixels (see http://coolneon.com/) that are
