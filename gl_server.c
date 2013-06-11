@@ -207,7 +207,8 @@ void handler(u8 channel, u16 count, pixel* p) {
 }
 
 void idle() {
-  opc_receive(source, handler, 1000);
+  /* A short timeout (20 ms) keeps us responsive to mouse events. */
+  opc_receive(source, handler, 20);
 }
 
 char* read_file(char* filename) {
