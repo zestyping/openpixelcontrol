@@ -114,38 +114,22 @@ void draw_axes() {
   glEnd();
 }
 
-void draw_octahedron(vector center, double radius) {
-  vector x = {radius, 0, 0};
-  vector y = {0, radius, 0};
-  vector z = {0, 0, radius};
-
-  glBegin(GL_TRIANGLE_FAN);
-  put_vertex(add(center, z));
-  put_vertex(add(center, x));
-  put_vertex(add(center, y));
-  put_vertex(subtract(center, x));
-  put_vertex(subtract(center, y));
-  put_vertex(add(center, x));
-  glEnd();
-  glBegin(GL_TRIANGLE_FAN);
-  put_vertex(subtract(center, z));
-  put_vertex(add(center, x));
-  put_vertex(add(center, y));
-  put_vertex(subtract(center, x));
-  put_vertex(subtract(center, y));
-  put_vertex(add(center, x));
-  glEnd();
-}
-
 void display() {
   int i;
+  GLUquadric* quad = gluNewQuadric();
+
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   draw_axes();
   for (i = 0; i < num_pixels; i++) {
     glColor3d(xfer[pixels[i].r].r, xfer[pixels[i].g].g, xfer[pixels[i].b].b);
-    draw_octahedron(vectors[i], 0.05);
+    glPushMatrix();
+    glTranslatef(vectors[i].x, vectors[i].y, vectors[i].z);
+    gluSphere(quad, 0.03, 6, 3);
+    glPopMatrix();
   }
   glutSwapBuffers();
+
+  gluDeleteQuadric(quad);
 }
 
 void update_camera() {
