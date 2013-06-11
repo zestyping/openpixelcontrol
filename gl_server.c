@@ -223,7 +223,7 @@ void handler(u8 channel, u16 count, pixel* p) {
 }
 
 void idle() {
-  opc_receive(source, handler, 20);
+  opc_receive(source, handler, 1000);
 }
 
 char* read_file(char* filename) {
@@ -266,7 +266,6 @@ void init(char* filename) {
       vectors[i].x = x->valuedouble;
       vectors[i].y = x->next->valuedouble;
       vectors[i].z = x->next->next->valuedouble;
-      printf("%.2f %.2f %.2f\n", vectors[i].x, vectors[i].y, vectors[i].z);
     }
   }
   num_pixels = i;
