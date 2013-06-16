@@ -21,10 +21,10 @@ bin/dummy_server: dummy_server.c opc_server.c
 	mkdir -p bin
 	gcc -o $@ $^
 
-bin/tcl_server: tcl_server.c opc_server.c
+bin/tcl_server: tcl_server.c opc_server.c src/spi.c
 	mkdir -p bin
 	gcc -o $@ $^
 
-bin/gl_server: gl_server.c opc_server.c cJSON.c
+bin/gl_server: gl_server.c opc_server.c src/cJSON.c
 	mkdir -p bin
 	gcc $(GL_OPTS) -o $@ $^

@@ -23,3 +23,7 @@ bin/
 
 # Vim temporary files
 *.swp
+
+# Kate temporary files
+*~
+*.kate-swp
