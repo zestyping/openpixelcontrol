@@ -23,12 +23,11 @@ void handler(u8 address, u16 count, pixel* pixels) {
 }
 
 int main(int argc, char** argv) {
-  u16 port;
+  u16 port = OPC_DEFAULT_PORT;
   pixel diagnostic_pixel;
   time_t t;
 
-  spi_speed_hz = argc > 1 ? atof(argv[1])*1000000 : SPI_DEFAULT_SPEED_HZ;
-  port = argc > 2 ? atoi(argv[2]) : OPC_DEFAULT_PORT;
+  parse_args(&spi_speed_hz, &port, argc, argv);
   spi_fd = init_spidev("/dev/spidev2.0", spi_speed_hz);
   if (spi_fd < 0) {
     return 1;

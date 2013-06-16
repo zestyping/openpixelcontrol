@@ -1,5 +1,14 @@
 #include "spi.h"
 
+void parse_args(u32* speed, u16* port, int argc, char** argv) {
+  if (argc > 1) {
+    *speed = strtol(argv[1], 0, 10)*1000000;
+  }
+  if (argc > 2) {
+    *port = atoi(argv[2]);
+  }
+}
+
 void spi_transfer(int fd, u32 spi_speed_hz, u8* tx, u8* rx, u32 len) {
   struct spi_ioc_transfer transfer;
 
@@ -47,6 +56,21 @@ void tcl_put_pixels(int fd, u8 spi_data_tx[], u16 count, pixel* pixels) {
     *d++ = p->r;
   }
   spi_write(fd, spi_data_tx, d - spi_data_tx);
+}
+
+void ws2801_put_pixels(int fd, u8 spi_data_tx[], u32 spi_speed_hz, 
+                       u16 count, pixel* pixels) {
+  int i;
+  pixel* p;
+  u8* d;
+  
+  d = spi_data_tx;
+  for (i = 0, p = pixels; i < count; i++) {
+    *d++ = p->b;
+    *d++ = p->g;
+    *d++ = p->r;
+  }
+  spi_transfer(fd, spi_speed_hz, spi_data_tx, 0, d - spi_data_tx);
 }
 
 int init_spidev(char dev[], u32 spi_speed_hz) {

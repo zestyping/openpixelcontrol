@@ -4,7 +4,7 @@ ifeq ($(platform),Darwin)
   ALL=bin/dummy_client bin/dummy_server bin/gl_server
   GL_OPTS=-framework OpenGL -framework GLUT
 else ifeq ($(platform),Linux)
-  ALL=bin/dummy_client bin/dummy_server bin/tcl_server bin/gl_server
+  ALL=bin/dummy_client bin/dummy_server bin/tcl_server bin/ws2801_server bin/gl_server
   GL_OPTS=-lGL -lglut -lGLU
 endif
 
@@ -22,6 +22,10 @@ bin/dummy_server: dummy_server.c opc_server.c
 	gcc -o $@ $^
 
 bin/tcl_server: tcl_server.c opc_server.c src/spi.c
+	mkdir -p bin
+	gcc -o $@ $^
+
+bin/ws2801_server: ws2801_server.c opc_server.c src/spi.c
 	mkdir -p bin
 	gcc -o $@ $^
 
