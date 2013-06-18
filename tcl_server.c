@@ -16,11 +16,35 @@ static int spi_fd = -1;
 static u8 spi_data_tx[((1 << 16) / 3) * 4 + 5];
 static u32 spi_speed_hz = SPI_DEFAULT_SPEED_HZ;
 
+
+void tcl_put_pixels(int fd, u8 spi_data_tx[], u16 count, pixel* pixels) {
+  int i;
+  pixel* p;
+  u8* d;
+  u8 flag;
+
+  d = spi_data_tx;
+  *d++ = 0;
+  *d++ = 0;
+  *d++ = 0;
+  *d++ = 0;
+  for (i = 0, p = pixels; i < count; i++, p++) {
+    flag = (p->r & 0xc0) >> 6 | (p->g & 0xc0) >> 4 | (p->b & 0xc0) >> 2;
+    *d++ = ~flag;
+    *d++ = p->b;
+    *d++ = p->g;
+    *d++ = p->r;
+  }
+  spi_write(fd, spi_data_tx, d - spi_data_tx);
+}
+
+
 void handler(u8 address, u16 count, pixel* pixels) {
   fprintf(stderr, "%d ", count);
   fflush(stderr);
   tcl_put_pixels(spi_fd, spi_data_tx, count, pixels);
 }
+
 
 int main(int argc, char** argv) {
   u16 port = OPC_DEFAULT_PORT;
