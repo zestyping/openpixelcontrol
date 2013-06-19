@@ -1,0 +1,7 @@
+To use this library, copy or sym-link the entire img2opc directory to your Processing/libraries/ directory.
+
+If you modify the library and want to rebuild its .jar file, run these commands in this directory, replacing the path to Processing's libraries as necessary.
+
+javac -classpath /Applications/Processing.app/Contents/Resources/Java/core/library/core.jar:/Applications/Processing.app/Contents/Resources/Java/modes/java/libraries/net/library/net.jar -d ./src/ ./src/*.java
+jar -cf ./library/img2opc.jar ./src/img2opc
+rm -r ./src/img2opc # optional
