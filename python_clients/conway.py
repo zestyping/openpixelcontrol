@@ -13,7 +13,7 @@ import sys
 import optparse
 import random
 
-import opc_client
+import opc
 
 # command line
 parser = optparse.OptionParser()
@@ -85,7 +85,7 @@ def pixelify_triboard(r,g,b):
 board = rand_board()
 
 
-client = opc_client.OPCClient(options.server)
+client = opc.Client(options.server)
 while True:
     client.put_pixels(pixelify_board(board), channel=0)
     board = tick(board)

@@ -23,7 +23,7 @@ import time
 import math
 import sys
 
-import opc_client
+import opc
 import color_utils
 
 
@@ -46,7 +46,7 @@ else:
 #-------------------------------------------------------------------------------
 # connect to server
 
-client = opc_client.OPCClient(IP_PORT)
+client = opc.Client(IP_PORT)
 if client.can_connect():
     print '    connected to %s' % IP_PORT
 else:

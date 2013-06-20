@@ -27,7 +27,7 @@ try:
 except ImportError:
     import simplejson as json
 
-import opc_client
+import opc
 import color_utils
 
 
@@ -71,7 +71,7 @@ for item in json.load(open(options.layout)):
 #-------------------------------------------------------------------------------
 # connect to server
 
-client = opc_client.OPCClient(options.server)
+client = opc.Client(options.server)
 if client.can_connect():
     print '    connected to %s' % options.server
 else:

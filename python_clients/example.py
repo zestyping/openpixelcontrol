@@ -19,12 +19,12 @@ Then run this script in another shell to send colors to the simulator
 
 import time
 import random
-import opc_client
+import opc
 
 ADDRESS = 'localhost:7890'
 
 # Create a client object
-client = opc_client.OPCClient(ADDRESS)
+client = opc.Client(ADDRESS)
 
 # Test if it can connect
 if client.can_connect():

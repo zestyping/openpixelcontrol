@@ -8,8 +8,10 @@ http://openpixelcontrol.org/
 
 Recommended use:
 
+    import opc
+
     # Create a client object
-    client = opc_client.OPCClient('localhost:7890')
+    client = opc.Client('localhost:7890')
 
     # Test if it can connect (optional)
     if client.can_connect():
@@ -33,7 +35,7 @@ Recommended use:
 
 import socket
 
-class OPCClient(object):
+class Client(object):
 
     def __init__(self, server_ip_port, long_connection=True, verbose=False):
         """Create an OPC client object which sends pixels to an OPC server.
