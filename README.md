@@ -22,6 +22,10 @@ repository includes these programs:
   control Total Control Lighting pixels (see http://coolneon.com/) that
   are connected to the SPI port on a Beaglebone.
 
+* python_clients/opc_client.py: A python library for connecting and sending pixels.
+
+* python_clients/color_utils.py: A python library for manipulating colors.
+
 * python_clients/raver_plaid.py: An example client that sends rainbow patterns.
 
 To build these programs, run "make" and then look in the bin/ directory.

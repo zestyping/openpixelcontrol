@@ -1,164 +1,170 @@
 #!/usr/bin/env python
 
 """Python Client library for Open Pixel Control
+http://github.com/zestyping/openpixelcontrol
 
 Sends pixel values to an Open Pixel Control server to be displayed.
 http://openpixelcontrol.org/
 
-Example use:
+Recommended use:
 
-    # connect to the server
-    sock = opc_client.get_socket('127.0.0.1:7890')
+    # Create a client object
+    client = opc_client.OPCClient('localhost:7890')
 
-    # make a list of pixel colors
-    pixels = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
+    # Test if it can connect (optional)
+    if client.can_connect():
+        print 'connected to %s' % ADDRESS
+    else:
+        # We could exit here, but instead let's just print a warning
+        # and then keep trying to send pixels in case the server
+        # appears later
+        print 'WARNING: could not connect to %s' % ADDRESS
 
-    # send the pixels to channel 0
-    opc_client.put_pixels(sock, 0, pixels)
-
-Also includes some helper functions to make color manipulations easier:
-
-    remap(x, oldmin, oldmax, newmin, newmax)
-    clamp(x, min, max)
-    cos(x, offset=0, period=1, minn=0, maxx=1)
-    contrast(color, center, mult)
-    clip_black_by_luminance(color, threshold)
-    clip_black_by_channels(color, threshold)
-    mod_dist(a, b, n)
-    gamma(color, gamma)
+    # Send pixels forever at 30 frames per second
+    while True:
+        my_pixels = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
+        if client.put_pixels(my_pixels, channel=0):
+            print '...'
+        else:
+            print 'not connected'
+        time.sleep(1/30.0)
 
 """
 
-import math
 import socket
 
+class OPCClient(object):
 
-#-------------------------------------------------------------------------------
-# Communication with Open Pixel Control servers
+    def __init__(self, server_ip_port, long_connection=True, verbose=False):
+        """Create an OPC client object which sends pixels to an OPC server.
 
-def get_socket(ip_port):
-    """Given an ip address and port as a string, return a connected socket.
+        server_ip_port should be an ip:port or hostname:port as a single string.
+        For example: '127.0.0.1:7890' or 'localhost:7890'
 
-    ip_port should be a string in this format: '127.0.0.1:7890'.
-    You can also use a hostname: 'localhost:7890'.
-    A socket.error exception will occur if the connection cannot be made.
+        There are two connection modes:
+        * In long connection mode, we try to maintain a single long-lived
+          connection to the server.  If that connection is lost we will try to
+          create a new one whenever put_pixels is called.  This mode is best
+          when there's high latency or very high framerates.
+        * In short connection mode, we open a connection when it's needed and
+          close it immediately after.  This means creating a connection for each
+          call to put_pixels. Keeping the connection usually closed makes it
+          possible for others to also connect to the server.
 
-    """
-    ip, port = ip_port.split(':')
-    port = int(port)
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect((ip, port))
-    return sock
+        A connection is not established during __init__.  To check if a
+        connection will succeed, use can_connect().
 
-def put_pixels(sock, channel, pixels):
-    """Send a list of colors to the given channel using the given socket object
+        If verbose is True, the client will print debugging info to the console.
 
-    channel: Which strand of lights to send the pixel colors to.
-        Must be an int in the range 0-255 inclusive.
-        0 is a special value which means "all strands".
+        """
+        self.verbose = verbose
 
-    pixels: A list of 3-tuples representing rgb colors.
-        Each value in the tuple should be in the range 0-255 inclusive. 
-        For example, [(255, 255, 255), (0, 0, 0), (127, 0, 0)]
-        Floats will be rounded down to integers.
-        Values outside the legal range will be clamped.
+        self._long_connection = long_connection
 
-    A socket.error exception will occur if the connection fails.
+        self._ip, self._port = server_ip_port.split(':')
+        self._port = int(self._port)
 
-    """
-    len_hi_byte = int(len(pixels)*3 / 256)
-    len_lo_byte = (len(pixels)*3) % 256
-    header = chr(channel) + chr(0) + chr(len_hi_byte) + chr(len_lo_byte)
-    pieces = [header]
-    for r, g, b in pixels:
-        r = min(255, max(0, int(r)))
-        g = min(255, max(0, int(g)))
-        b = min(255, max(0, int(b)))
-        pieces.append(chr(r) + chr(g) + chr(b))
-    command = ''.join(pieces)
-    sock.send(command)
+        self._socket = None  # will be None when we're not connected
 
+    def _debug(self, m):
+        if self.verbose:
+            print '    %s' % str(m)
 
-#-------------------------------------------------------------------------------
-# Helper functions to make common color manipulations easier
+    def _ensure_connected(self):
+        """Set up a connection if one doesn't already exist.
 
-def remap(x, oldmin, oldmax, newmin, newmax):
-    """Remap the float x from the range oldmin-oldmax to the range newmin-newmax
+        Return True on success or False on failure.
 
-    Does not clamp values that exceed min or max.
-    For example, to make a sine wave that goes between 0 and 255:
-        remap(math.sin(time.time()), -1, 1, 0, 256)
+        """
+        if self._socket:
+            self._debug('_ensure_connected: already connected, doing nothing')
+            return True
 
-    """
-    zero_to_one = (x-oldmin) / (oldmax-oldmin)
-    return zero_to_one*(newmax-newmin) + newmin
+        try:
+            self._debug('_ensure_connected: trying to connect...')
+            self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._socket.connect((self._ip, self._port))
+            self._debug('_ensure_connected:    ...success')
+            return True
+        except socket.error:
+            self._debug('_ensure_connected:    ...failure')
+            self._socket = None
+            return False
 
-def clamp(x, minn, maxx):
-    """If float x is outside the range minn-maxx, return minn or maxx."""
-    return max(minn, min(maxx, x))
+    def disconnect(self):
+        """Drop the connection to the server, if there is one."""
+        self._debug('disconnecting')
+        if self._socket:
+            self._socket.close()
+        self._socket = None
 
-def cos(x, offset=0, period=1, minn=0, maxx=1):
-    """A cosine curve scaled to fit in a 0-1 range and 0-1 domain by default.
+    def can_connect(self):
+        """Try to connect to the server.
 
-    offset: how much to slide the curve across the domain.
-    period: the length of one wave
-    minn, maxx: the output range
-    """
-    value = math.cos((x/period - offset) * math.pi * 2) / 2 + 0.5
-    return value*(maxx-minn) + minn
+        Return True on success or False on failure.
 
-def contrast(color, center, mult):
-    """Expand the color values by a factor of mult around the pivot value of center.
+        If in long connection mode, this connection will be kept and re-used for
+        subsequent put_pixels calls.
 
-    color: an (r, g, b) tuple
-    center: a float -- the fixed point
-    mult: a float -- expand or contract the values around the center point
+        """
+        success = self._ensure_connected()
+        if not self._long_connection:
+            self.disconnect()
+        return success
 
-    """
-    r, g, b = color
-    r = (r - center) * mult + center
-    g = (g - center) * mult + center
-    b = (b - center) * mult + center
-    return (r, g, b)
+    def put_pixels(self, pixels, channel=0):
+        """Send the list of pixel colors to the OPC server on the given channel.
 
-def clip_black_by_luminance(color, threshold):
-    """If the color's luminance is less than threshold, replace it with black.
-    
-    color: an (r, g, b) tuple
-    threshold: a float
+        channel: Which strand of lights to send the pixel colors to.
+            Must be an int in the range 0-255 inclusive.
+            0 is a special value which means "all channels".
 
-    """
-    r, g, b = color
-    if r+g+b < threshold*3:
-        return (0, 0, 0)
-    return (r, g, b)
+        pixels: A list of 3-tuples representing rgb colors.
+            Each value in the tuple should be in the range 0-255 inclusive. 
+            For example: [(255, 255, 255), (0, 0, 0), (127, 0, 0)]
+            Floats will be rounded down to integers.
+            Values outside the legal range will be clamped.
 
-def clip_black_by_channels(color, threshold):
-    """Replace any r, g, or b value less than threshold with 0.
+        Will establish a connection to the server as needed.
 
-    color: an (r, g, b) tuple
-    threshold: a float
+        On successful transmission of pixels, return True.
+        On failure (bad connection), return False.
 
-    """
-    r, g, b = color
-    if r < threshold: r = 0
-    if g < threshold: g = 0
-    if b < threshold: b = 0
-    return (r, g, b)
+        The list of pixel colors will be applied to the LED string starting
+        with the first LED.  It's not possible to send a color just to one
+        LED at a time (unless it's the first one).
 
-def mod_dist(a, b, n):
-    """Return the distance between a and b, modulo n.
+        """
+        self._debug('put_pixels: connecting')
+        is_connected = self._ensure_connected()
+        if not is_connected:
+            self._debug('put_pixels: not connected.  ignoring these pixels.')
+            return False
 
-    a and b can be floats or integers.
+        # build OPC message
+        len_hi_byte = int(len(pixels)*3 / 256)
+        len_lo_byte = (len(pixels)*3) % 256
+        header = chr(channel) + chr(0) + chr(len_hi_byte) + chr(len_lo_byte)
+        pieces = [header]
+        for r, g, b in pixels:
+            r = min(255, max(0, int(r)))
+            g = min(255, max(0, int(g)))
+            b = min(255, max(0, int(b)))
+            pieces.append(chr(r) + chr(g) + chr(b))
+        message = ''.join(pieces)
 
-    For example, thinking of a clock:
-    mod_dist(11, 1, 12) == 2 because you can "wrap around".
+        self._debug('put_pixels: sending pixels to server')
+        try:
+            self._socket.send(message)
+        except socket.error:
+            self._debug('put_pixels: connection lost.  could not send pixels.')
+            self._socket = None
+            return False
 
-    """
-    return min((a-b) % n, (b-a) % n)
+        if not self._long_connection:
+            self._debug('put_pixels: disconnecting')
+            self.disconnect()
 
-def gamma(color, gamma):
-    """Apply a gamma curve to the color.  The color values should be in the range 0-1."""
-    r, g, b = color
-    return (max(r,0) ** gamma, max(g,0) ** gamma, max(b,0) ** gamma)
+        return True
+
 

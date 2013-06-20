@@ -84,9 +84,10 @@ def pixelify_triboard(r,g,b):
 
 board = rand_board()
 
-SOCK = opc_client.get_socket(options.server)
+
+client = opc_client.OPCClient(options.server)
 while True:
-    opc_client.put_pixels(SOCK, 0, pixelify_board(board))
+    client.put_pixels(pixelify_board(board), channel=0)
     board = tick(board)
     time.sleep(1 / options.fps)
 
