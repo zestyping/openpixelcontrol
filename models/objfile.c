@@ -179,15 +179,3 @@ void obj_free(obj* o) {
   array_free(o->fs);
   free(o);
 }
-
-int main(int argc, char* argv[]) {
-  FILE* fp = fopen(argv[1], "rt");
-  obj* o = obj_read(fp);
-  fclose(fp);
-
-  argv[1][strlen(argv[1]) - 1] = '2';
-  fp = fopen(argv[1], "wt");
-  obj_write(o, fp);
-  fclose(fp);
-  return 0;
-}
