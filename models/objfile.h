@@ -34,4 +34,5 @@ typedef struct {
 } obj;
 
 obj* obj_read(FILE* fp);
+void obj_write(obj* o, FILE* fp);
 void obj_free(obj* o);
