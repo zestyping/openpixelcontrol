@@ -162,8 +162,14 @@ void obj_write(obj* o, FILE* fp) {
 }
 
 void obj_free(obj* o) {
+  int i;
+
+  if (o->mtllib) free(o->mtllib);
+  for (i = 0; i < o->mtls->count; i++) free(((char**) o->mtls->items)[i]);
+  array_free(o->mtls);
   array_free(o->vs);
   array_free(o->vts);
+  array_free(o->vns);
   array_free(o->fs);
   free(o);
 }
