@@ -52,6 +52,8 @@ void ws2801_put_pixels(int fd, u8 spi_data_tx[], u32 spi_speed_hz,
 void handler(u8 address, u16 count, pixel* pixels) {
   fprintf(stderr, "%d ", count);
   fflush(stderr);
+  ws2801_put_pixels(spi_fd, spi_data_tx, spi_speed_hz, count, 
+    pixels, rgb_order);
 }
 
 order_t get_order(int argc, char** argv) {
