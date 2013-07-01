@@ -34,52 +34,6 @@ double camera_elevation = -15;  // camera elevation angle, degrees
 double camera_distance = 16.0;  // distance from origin, metres
 double camera_aspect = 1.0;  // will be updated to match window aspect ratio
 
-// Vector arithmetic
-vector tmp_vector;
-#define set_rgb(r, g, b) (glColor3d(r, g, b))
-#define put_vertex(v) ((tmp_vector = v), glVertex3dv(&(tmp_vector.x)))
-#define put_pair(v, w) (put_vertex(v), put_vertex(w))
-
-vector add(vector v, vector w) {
-  vector result;
-  result.x = v.x + w.x;
-  result.y = v.y + w.y;
-  result.z = v.z + w.z;
-  return result;
-}
-
-vector subtract(vector v, vector w) {
-  vector result;
-  result.x = v.x - w.x;
-  result.y = v.y - w.y;
-  result.z = v.z - w.z;
-  return result;
-}
-
-vector multiply(double f, vector v) {
-  vector result;
-  result.x = f*v.x;
-  result.y = f*v.y;
-  result.z = f*v.z;
-  return result;
-}
-
-double length(vector v) {
-  return sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
-}
-
-double dot(vector v, vector w) {
-  return v.x*w.x + v.y*w.y + v.z*w.z;
-}
-
-vector cross(vector v, vector w) {
-  vector result;
-  result.x = v.y*w.z - w.y*v.z;
-  result.y = v.z*w.x - w.z*v.x;
-  result.z = v.x*w.y - w.x*v.y;
-  return result;
-}
-
 // Drawing
 void draw_axes() {
   vector o = {0, 0, 0};
@@ -93,16 +47,22 @@ void draw_axes() {
   glDisable(GL_LIGHTING);
   glLineWidth(2);
   glBegin(GL_LINES);
-  set_rgb(0.3, 0.3, 0.3);
-  put_pair(o, x);
-  put_pair(o, y);
-  put_pair(o, z);
-  set_rgb(0.3, 0, 0);
-  put_pair(x, xx);
-  set_rgb(0, 0.3, 0);
-  put_pair(y, yy);
-  set_rgb(0, 0, 0.3);
-  put_pair(z, zz);
+  glColor3d(0.3, 0.3, 0.3);
+  glVertex3d(0, 0, 0);
+  glVertex3d(1, 0, 0);
+  glVertex3d(0, 0, 0);
+  glVertex3d(0, 1, 0);
+  glVertex3d(0, 0, 0);
+  glVertex3d(0, 0, 1);
+  glColor3d(0.3, 0, 0);
+  glVertex3d(1, 0, 0);
+  glVertex3d(10, 0, 0);
+  glColor3d(0, 0.3, 0);
+  glVertex3d(0, 1, 0);
+  glVertex3d(0, 10, 0);
+  glColor3d(0, 0, 0.3);
+  glVertex3d(0, 0, 1);
+  glVertex3d(0, 0, 10);
   glEnd();
 }
 
