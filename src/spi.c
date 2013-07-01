@@ -1,7 +1,7 @@
 #include "spi.h"
 
 
-void parse_args(u32* speed, u16* port, int argc, char** argv) {
+void get_speed_and_port(u32* speed, u16* port, int argc, char** argv) {
   if (argc > 1) {
     *speed = strtol(argv[1], 0, 10)*1000000;
   }

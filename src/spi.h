@@ -17,7 +17,7 @@
 // Parse command line args to extract port number (argv[1]) and speed (argv[2]).
 // Does not alter values if no appropriate arg is present, so default values
 // should be assigned prior to calling this.
-void parse_args(u32* speed, u16* port, int argc, char** argv);
+void get_speed_and_port(u32* speed, u16* port, int argc, char** argv);
 
 void spi_transfer(int fd, u32 spi_speed_hz, u8* tx, u8* rx, u32 len, u16 delay);
 

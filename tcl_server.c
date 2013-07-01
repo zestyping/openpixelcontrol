@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
   pixel diagnostic_pixel;
   time_t t;
 
-  parse_args(&spi_speed_hz, &port, argc, argv);
+  get_speed_and_port(&spi_speed_hz, &port, argc, argv);
   spi_fd = init_spidev("/dev/spidev2.0", spi_speed_hz);
   if (spi_fd < 0) {
     return 1;
