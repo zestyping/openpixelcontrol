@@ -1,38 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
-typedef struct {
-  int capacity;
-  int count;
-  int size;
-  void* items;
-} array;
-
-typedef struct {
-  int index;
-  double x, y, z;
-} vector;
-
-typedef struct {
-  vector* v;
-  vector* vt;
-  vector* vn;
-} vertex;
-
-typedef struct {
-  vertex vs[3];
-  char* m;
-} face;
-
-typedef struct {
-  char* mtllib;
-  array* mtls;
-  array* vs;
-  array* vts;
-  array* vns;
-  array* fs;
-} obj;
+#include <math.h>
+#include "objfile.h"
 
 array* array_new(int size) {
   array* a = malloc(sizeof(array));
@@ -62,8 +32,10 @@ obj* obj_read(FILE* fp) {
   char* arg;
   char* mtl = NULL;
   int i, mi, vi, vti, vni;
-  vector v, vt, vn;
+  vector v, vt, vn, w;
+  double x, y, z, len;
   face f;
+  face* ff;
   obj* o = malloc(sizeof(obj));
 
   o->mtllib = NULL;
@@ -123,6 +95,22 @@ obj* obj_read(FILE* fp) {
         }
         break;
     }
+  }
+
+  for (i = 0, ff = o->fs->items; i < o->fs->count; i++, ff++) {
+    v.x = ff->vs[1].v->x - ff->vs[0].v->x;
+    v.y = ff->vs[1].v->y - ff->vs[0].v->y;
+    v.z = ff->vs[1].v->z - ff->vs[0].v->z;
+    w.x = ff->vs[2].v->x - ff->vs[0].v->x;
+    w.y = ff->vs[2].v->y - ff->vs[0].v->y;
+    w.z = ff->vs[2].v->z - ff->vs[0].v->z;
+    x = v.y*w.z - w.y*v.z;
+    y = v.z*w.x - w.z*v.x;
+    z = v.x*w.y - w.x*v.y;
+    len = sqrt(x*x + y*y + z*z);
+    ff->n.x = x/len;
+    ff->n.y = y/len;
+    ff->n.z = z/len;
   }
   return o;
 }
