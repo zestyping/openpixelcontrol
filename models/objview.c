@@ -86,6 +86,7 @@ void draw_grid() {
 
 GLuint texs[32];
 unsigned char* image;
+int enable_textures = 1;
 
 void load_texture(int index, char* filename) {
   GLuint tex;
@@ -141,7 +142,7 @@ void draw_obj(obj* o) {
   glEnable(GL_LIGHT0);
 
   for (mi = 0, m = o->mtls->items; mi < o->mtls->count; mi++, m++) {
-    if (texs[mi] >= 0) {
+    if (enable_textures && texs[mi] >= 0) {
       glEnable(GL_TEXTURE_2D);
       glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
       glBindTexture(GL_TEXTURE_2D, texs[mi]);
@@ -243,6 +244,7 @@ void motion(int x, int y) {
 
 void keyboard(unsigned char key, int x, int y) {
   if (key == '\x1b' || key == 'q') exit(0);
+  if (key == 't') enable_textures = !enable_textures;
 }
 
 int main(int argc, char** argv) {
