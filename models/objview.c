@@ -9,6 +9,7 @@ under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 CONDITIONS OF ANY KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations under the License. */
 
+#include <libgen.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,6 +23,7 @@ specific language governing permissions and limitations under the License. */
 #else
 #include <GL/glut.h>
 #endif
+#include "soil/SOIL.h"
 #include "objfile.h"
 
 // Camera parameters
@@ -82,50 +84,97 @@ void draw_grid() {
   glEnd();
 }
 
-void compile_obj(obj* o, int list) {
-  int fi;
-  face* f;
+GLuint texs[32];
+unsigned char* image;
 
-  glNewList(list, GL_COMPILE);
-  glBegin(GL_TRIANGLES);
-  glColor3d(0.3, 0.3, 0.3);
-  for (fi = 0, f = o->fs->items; fi < o->fs->count; fi++, f++) {
-    glNormal3dv((double*) &(f->n));
-    glVertex3dv((double*) f->vs[0].v);
-    glVertex3dv((double*) f->vs[1].v);
-    glVertex3dv((double*) f->vs[2].v);
+void load_texture(int index, char* filename) {
+  GLuint tex;
+  int width, height, x, y;
+  unsigned char* image;
+  unsigned char* a;
+  unsigned char* b;
+  unsigned char tmp;
+  char command[1000];
+
+  texs[index] = -1;
+  image = SOIL_load_image(filename, &width, &height, 0, SOIL_LOAD_RGB);
+  fprintf(stderr, "Texture %s: ", filename);
+  if (!image && strstr(SOIL_last_result(), "progressive")) {
+    snprintf(command, 1000, "jpegtran '%s' > %s", filename, "/tmp/tex.jpg");
+    system(command);
+    image = SOIL_load_image("/tmp/tex.jpg", &width, &height, 0, SOIL_LOAD_RGB);
+    unlink("/tmp/tex.jpg");
   }
-  glEnd();
-  glEndList();
-}
-
-int obj_list = 0;
-
-void draw_compiled_obj(obj* o) {
-  if (!obj_list) {
-    obj_list = 1;
-    compile_obj(o, obj_list);
+  if (!image) {
+    fprintf(stderr, "%s\n", SOIL_last_result());
+    return;
   }
-  glEnable(GL_LIGHTING);
-  glEnable(GL_LIGHT0);
-  glCallList(obj_list);
+  fprintf(stderr, "%d x %d\n", width, height);
+
+  // Flip the image vertically.
+  for (y = 0; y*2 < height; y++) {
+    a = image + y*width*3;
+    b = image + (height - 1 - y)*width*3;
+    for (x = 0; x < width*3; x++, a++, b++) {
+      tmp = *a;
+      *a = *b;
+      *b = tmp;
+    }
+  }
+
+  glGenTextures(1, &texs[index]);
+  glBindTexture(GL_TEXTURE_2D, texs[index]);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
+               GL_UNSIGNED_BYTE, image);
+  SOIL_free_image_data(image);
 }
 
 void draw_obj(obj* o) {
   int fi;
+  int mi;
+  material* m;
   face* f;
 
   glEnable(GL_LIGHTING);
   glEnable(GL_LIGHT0);
-  glBegin(GL_TRIANGLES);
-  glColor3d(0.3, 0.3, 0.3);
-  for (fi = 0, f = o->fs->items; fi < o->fs->count; fi++, f++) {
-    glNormal3dv((double*) &(f->n));
-    glVertex3dv((double*) f->vs[0].v);
-    glVertex3dv((double*) f->vs[1].v);
-    glVertex3dv((double*) f->vs[2].v);
+
+  for (mi = 0, m = o->mtls->items; mi < o->mtls->count; mi++, m++) {
+    if (texs[mi] >= 0) {
+      glEnable(GL_TEXTURE_2D);
+      glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+      glBindTexture(GL_TEXTURE_2D, texs[mi]);
+    } else {
+      glDisable(GL_TEXTURE_2D);
+    }
+    glColor3d(m->kd.r, m->kd.g, m->kd.b);
+
+    glBegin(GL_TRIANGLES);
+    for (fi = 0, f = o->fs->items; fi < o->fs->count; fi++, f++) {
+      if (f->m == m) {
+        glNormal3dv((double*) &(f->n));
+        if (f->vs[0].vt) glTexCoord2dv((double*) f->vs[0].vt);
+        glVertex3dv((double*) f->vs[0].v);
+        if (f->vs[1].vt) glTexCoord2dv((double*) f->vs[1].vt);
+        glVertex3dv((double*) f->vs[1].v);
+        if (f->vs[2].vt) glTexCoord2dv((double*) f->vs[2].vt);
+        glVertex3dv((double*) f->vs[2].v);
+      }
+    }
+    glEnd();
   }
-  glEnd();
+}
+
+void draw_compiled_obj(obj* o) {
+  static int list = 0;
+  if (!list) {
+    list = 1;
+    glNewList(list, GL_COMPILE);
+    draw_obj(o);
+    glEndList();
+  }
+  glCallList(list);
 }
 
 obj* o = NULL;
@@ -197,22 +246,28 @@ void keyboard(unsigned char key, int x, int y) {
 }
 
 int main(int argc, char** argv) {
-  FILE* fp;
+  int mi;
+  material* m;
+  char path[1000];
 
   glutInit(&argc, argv);
   if (argc < 2) {
     fprintf(stderr, "Usage: %s <options> <filename.obj>\n", argv[0]);
     exit(1);
   }
-  fprintf(stderr, "Loading %s...", argv[1]);
-  fp = fopen(argv[1], "rt");
-  o = obj_read(fp);
-  fclose(fp);
-  fprintf(stderr, " v: %d, f: %d\n", o->vs->count, o->fs->count);
+  fprintf(stderr, "Loading %s: ", argv[1]);
+  o = obj_read(argv[1]);
+  fprintf(stderr, "%d vertices, %d faces\n", o->vs->count, o->fs->count);
 
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
   glutInitWindowSize(800, 600);
   glutCreateWindow(argv[1]);
+  for (mi = 0, m = o->mtls->items; mi < o->mtls->count; mi++, m++) {
+    if (m->map_kd) {
+      snprintf(path, 1000, "%s/%s", dirname(argv[1]), m->map_kd);
+      load_texture(mi, path);
+    }
+  }
   glutReshapeFunc(reshape);
   glutDisplayFunc(display);
   glutMouseFunc(mouse);

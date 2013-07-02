@@ -19,9 +19,22 @@ typedef struct {
 } vertex;
 
 typedef struct {
+  double r, g, b;
+} color;
+
+typedef struct {
+  char* name;
+  color ka, kd, ks;
+  double alpha, ns;
+  char* map_ka;
+  char* map_kd;
+  char* map_ks;
+} material;
+
+typedef struct {
   vertex vs[3];
   vector n;
-  char* m;
+  material* m;
 } face;
 
 typedef struct {
@@ -33,6 +46,6 @@ typedef struct {
   array* fs;
 } obj;
 
-obj* obj_read(FILE* fp);
-void obj_write(obj* o, FILE* fp);
-void obj_free(obj* o);
+obj* obj_read(char* path);  // load .obj file, creating a new obj object
+void obj_write(obj* o, char* path);  // write an obj (does not write mtllib)
+void obj_free(obj* o);  // deallocates an obj object
