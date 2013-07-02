@@ -1,21 +1,19 @@
 #!/usr/bin/env python
-"""
-A demo client for Open Pixel Control
-David Wallace / https://github.com/longears
 
-Creates moving stripes visualizing the x, y, and z coordinates
-mapped to r, g, and b, respectively.  Also draws a moving white
-spot which shows the order of the pixels in the layout file.
+"""A demo client for Open Pixel Control
+http://github.com/zestyping/openpixelcontrol
+
+Creates moving blobby colors.
 
 To run:
 First start the gl simulator using, for example, the included "wall" layout
 
     make
-    ./bin/gl_server layouts/wall.json
+    bin/gl_server layouts/wall.json
 
 Then run this script in another shell to send colors to the simulator
 
-    ./example_clients/spatial_stripes.py --layout layouts/wall.json
+    example_clients/lava_lamp.py --layout layouts/wall.json
 
 """
 
@@ -29,7 +27,8 @@ try:
 except ImportError:
     import simplejson as json
 
-import opc_client
+import opc
+import color_utils
 
 
 #-------------------------------------------------------------------------------
@@ -72,10 +71,13 @@ for item in json.load(open(options.layout)):
 #-------------------------------------------------------------------------------
 # connect to server
 
-print '    connecting to server at %s' % options.server
+client = opc.Client(options.server)
+if client.can_connect():
+    print '    connected to %s' % options.server
+else:
+    # can't connect, but keep running in case the server appears later
+    print '    WARNING: could not connect to %s' % options.server
 print
-
-SOCK = opc_client.get_socket(options.server)
 
 
 #-------------------------------------------------------------------------------
@@ -95,9 +97,9 @@ def pixel_color(t, coord, ii, n_pixels, random_values):
     """
     # make moving stripes for x, y, and z
     x, y, z = coord
-    y += opc_client.cos(x + 0.2*z, offset=0, period=1, minn=0, maxx=0.6)
-    z += opc_client.cos(x, offset=0, period=1, minn=0, maxx=0.3)
-    x += opc_client.cos(y + z, offset=0, period=1.5, minn=0, maxx=0.2)
+    y += color_utils.cos(x + 0.2*z, offset=0, period=1, minn=0, maxx=0.6)
+    z += color_utils.cos(x, offset=0, period=1, minn=0, maxx=0.3)
+    x += color_utils.cos(y + z, offset=0, period=1.5, minn=0, maxx=0.2)
 
     # rotate
     x, y, z = y, z, x
@@ -109,23 +111,23 @@ def pixel_color(t, coord, ii, n_pixels, random_values):
 #         z += ((ii*147)%7) / n_pixels * 44.34 + 0.1
 
     # make x, y, z -> r, g, b sine waves
-    r = opc_client.cos(x, offset=t / 4, period=2, minn=0, maxx=1)
-    g = opc_client.cos(y, offset=t / 4, period=2, minn=0, maxx=1)
-    b = opc_client.cos(z, offset=t / 4, period=2, minn=0, maxx=1)
-    r, g, b = opc_client.contrast((r, g, b), 0.5, 1.5)
-#     r, g, b = opc_client.clip_black_by_luminance((r, g, b), 0.5)
+    r = color_utils.cos(x, offset=t / 4, period=2, minn=0, maxx=1)
+    g = color_utils.cos(y, offset=t / 4, period=2, minn=0, maxx=1)
+    b = color_utils.cos(z, offset=t / 4, period=2, minn=0, maxx=1)
+    r, g, b = color_utils.contrast((r, g, b), 0.5, 1.5)
+#     r, g, b = color_utils.clip_black_by_luminance((r, g, b), 0.5)
 
 #     # shift the color of a few outliers
 #     if random_values[ii] < 0.03:
 #         r, g, b = b, g, r
 
     # black out regions
-    r2 = opc_client.cos(x, offset=t / 10 + 12.345, period=3, minn=0, maxx=1)
-    g2 = opc_client.cos(y, offset=t / 10 + 24.536, period=3, minn=0, maxx=1)
-    b2 = opc_client.cos(z, offset=t / 10 + 34.675, period=3, minn=0, maxx=1)
+    r2 = color_utils.cos(x, offset=t / 10 + 12.345, period=3, minn=0, maxx=1)
+    g2 = color_utils.cos(y, offset=t / 10 + 24.536, period=3, minn=0, maxx=1)
+    b2 = color_utils.cos(z, offset=t / 10 + 34.675, period=3, minn=0, maxx=1)
     clampdown = (r2 + g2 + b2)/2
-    clampdown = opc_client.remap(clampdown, 0.8, 0.9, 0, 1)
-    clampdown = opc_client.clamp(clampdown, 0, 1)
+    clampdown = color_utils.remap(clampdown, 0.8, 0.9, 0, 1)
+    clampdown = color_utils.clamp(clampdown, 0, 1)
     r *= clampdown
     g *= clampdown
     b *= clampdown
@@ -136,7 +138,7 @@ def pixel_color(t, coord, ii, n_pixels, random_values):
 
     # apply gamma curve
     # only do this on live leds, not in the simulator
-    #r, g, b = opc_client.gamma((r, g, b), 2.2)
+    #r, g, b = color_utils.gamma((r, g, b), 2.2)
 
     return (r*256, g*256, b*256)
 
@@ -153,6 +155,6 @@ start_time = time.time()
 while True:
     t = time.time() - start_time
     pixels = [pixel_color(t*0.6, coord, ii, n_pixels, random_values) for ii, coord in enumerate(coordinates)]
-    opc_client.put_pixels(SOCK, 0, pixels)
+    client.put_pixels(pixels, channel=0)
     time.sleep(1 / options.fps)
 
