@@ -2,10 +2,10 @@
 
 
 void get_speed_and_port(u32* speed, u16* port, int argc, char** argv) {
-  if (argc > 1) {
+  if (argc > 1 && speed) {
     *speed = strtol(argv[1], 0, 10)*1000000;
   }
-  if (argc > 2) {
+  if (argc > 2 && port) {
     *port = atoi(argv[2]);
   }
 }

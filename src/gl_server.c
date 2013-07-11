@@ -23,7 +23,7 @@ specific language governing permissions and limitations under the License. */
 #include <GL/glut.h>
 #endif
 
-#include "src/cJSON.h"
+#include "cJSON.h"
 #include "opc.h"
 
 opc_source source = -1;

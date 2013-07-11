@@ -13,7 +13,7 @@ specific language governing permissions and limitations under the License. */
 #ifndef OPC_H
 #define OPC_H
 
-#include "src/types.h"
+#include "types.h"
 
 #define OPC_DEFAULT_PORT 7890
 

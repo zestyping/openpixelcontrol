@@ -13,22 +13,22 @@ all: $(ALL)
 clean:
 	rm -rf bin/*
 
-bin/dummy_client: dummy_client.c opc_client.c
+bin/dummy_client: src/dummy_client.c src/opc_client.c
 	mkdir -p bin
 	gcc -o $@ $^
 
-bin/dummy_server: dummy_server.c opc_server.c
+bin/dummy_server: src/dummy_server.c src/opc_server.c
 	mkdir -p bin
 	gcc -o $@ $^
 
-bin/tcl_server: tcl_server.c opc_server.c src/spi.c
+bin/tcl_server: src/tcl_server.c src/opc_server.c src/spi.c
 	mkdir -p bin
 	gcc -o $@ $^
 
-bin/ws2801_server: ws2801_server.c opc_server.c src/spi.c
+bin/ws2801_server: src/ws2801_server.c src/opc_server.c src/spi.c
 	mkdir -p bin
 	gcc -o $@ $^
 
-bin/gl_server: gl_server.c opc_server.c src/cJSON.c
+bin/gl_server: src/gl_server.c src/opc_server.c src/cJSON.c
 	mkdir -p bin
 	gcc $(GL_OPTS) -o $@ $^

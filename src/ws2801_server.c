@@ -1,4 +1,4 @@
-#include "src/spi.h"
+#include "spi.h"
 #include "opc.h"
 
 #define POST_TX_DELAY_USECS 1000
