@@ -255,12 +255,27 @@ void handler(u8 channel, u16 count, pixel* p) {
   for (i = 0; i < count; i++) {
     pixels[i] = p[i];
   }
-  display();
 }
 
 void idle() {
-  /* A short timeout (20 ms) keeps us responsive to mouse events. */
-  opc_receive(source, handler, 20);
+  /*
+   * Receive all pending frames. We'll often draw slower than an OPC source
+   * is producing pixels; to avoid runaway lag due to data buffered in the socket,
+   * we want to skip frames.
+   *
+   * A short timeout (20 ms) on the first receive keeps us responsive to mouse events.
+   * A zero timeout on subsequent receives lets us drain any queued frames without
+   * waiting for them.
+   */
+
+  if (opc_receive(source, handler, 20) > 0) {
+
+    // Drain queue
+    while (opc_receive(source, handler, 0) > 0);
+
+    // Show the last received frame
+    display();
+  }
 }
 
 char* read_file(char* filename) {
