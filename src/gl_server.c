@@ -27,6 +27,7 @@ specific language governing permissions and limitations under the License. */
 #include "opc.h"
 
 opc_source source = -1;
+int verbose = 0;
 
 // Camera parameters
 #define FOV_DEGREES 20
@@ -241,17 +242,21 @@ void keyboard(unsigned char key, int x, int y) {
 
 void handler(u8 channel, u16 count, pixel* p) {
   int i = 0;
-  char* sep = " =";
-  printf("-> channel %d: %d pixel%s", channel, count, count == 1 ? "" : "s");
-  for (i = 0; i < count; i++) {
-    if (i >= 4) {
-      printf(", ...");
-      break;
+
+  if (verbose) {
+    char* sep = " =";
+    printf("-> channel %d: %d pixel%s", channel, count, count == 1 ? "" : "s");
+    for (i = 0; i < count; i++) {
+      if (i >= 4) {
+        printf(", ...");
+        break;
+      }
+      printf("%s %02x %02x %02x", sep, p[i].r, p[i].g, p[i].b);
+      sep = ",";
     }
-    printf("%s %02x %02x %02x", sep, p[i].r, p[i].g, p[i].b);
-    sep = ",";
+    printf("\n");
   }
-  printf("\n");
+
   for (i = 0; i < count; i++) {
     pixels[i] = p[i];
   }
