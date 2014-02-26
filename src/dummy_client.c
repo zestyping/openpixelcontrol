@@ -11,6 +11,7 @@ specific language governing permissions and limitations under the License. */
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "opc.h"
 
 #define MAX_PIXELS (65535/3)

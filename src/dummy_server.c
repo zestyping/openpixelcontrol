@@ -10,6 +10,7 @@ CONDITIONS OF ANY KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations under the License. */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "opc.h"
 
 void handler(u8 channel, u16 count, pixel* pixels) {

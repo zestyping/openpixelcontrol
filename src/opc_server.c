@@ -16,6 +16,8 @@ specific language governing permissions and limitations under the License. */
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 #include "opc.h"
 
 /* Internal structure for a source.  sock >= 0 iff the connection is open. */

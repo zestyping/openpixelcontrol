@@ -94,7 +94,8 @@ static u8 opc_connect(opc_sink sink, u32 timeout_ms) {
   struct timeval timeout;
   opc_sink_info* info = &opc_sinks[sink];
   fd_set writefds;
-  int opt_errno, len;
+  int opt_errno;
+  socklen_t len;
 
   if (sink < 0 || sink >= opc_next_sink) {
     fprintf(stderr, "OPC: Sink %d does not exist\n", sink);
