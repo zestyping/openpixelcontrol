@@ -91,7 +91,7 @@ u8 opc_receive(opc_source source, opc_handler* handler, u32 timeout_ms) {
 
   if (source < 0 || source >= opc_next_source) {
     fprintf(stderr, "OPC: Source %d does not exist\n", source);
-    return;
+    return 0;
   }
 
   /* Select for inbound data or connections. */
