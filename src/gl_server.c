@@ -175,6 +175,7 @@ void display() {
   int i;
   shape* sh;
 
+  glClearColor(0.1, 0.1, 0.1, 1.0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   draw_axes();
   GLUquadric* quad = gluNewQuadric();
@@ -358,7 +359,7 @@ void init(char* filename) {
     pixels[i].r = pixels[i].g = pixels[i].b = 1;
   }
   for (i = 0; i < 256; i++) {
-    xfer[i].r = xfer[i].g = xfer[i].b = 0.1 + i*0.9/256;
+    xfer[i].r = xfer[i].g = xfer[i].b = i/255.0;
   }
 }
 
