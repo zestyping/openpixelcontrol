@@ -13,7 +13,7 @@ First start the gl simulator using, for example, the included "wall" layout
 
 Then run this script in another shell to send colors to the simulator
 
-    example_clients/example.py
+    python_clients/example.py
 
 """
 
