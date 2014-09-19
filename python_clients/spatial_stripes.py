@@ -15,7 +15,7 @@ First start the gl simulator using, for example, the included "wall" layout
 
 Then run this script in another shell to send colors to the simulator
 
-    example_clients/spatial_stripes.py --layout layouts/wall.json
+    python_clients/spatial_stripes.py --layout layouts/wall.json
 
 """
 
