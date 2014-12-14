@@ -331,10 +331,10 @@ void load_layout(char* filename, int channel) {
   free(buffer);
   channel_offsets[channel] = num_pixels;
   if (verbose) {
-    printf(stderr, "Channel %d offset is %d\n", channel, channel_offsets[channel]);
+    printf("Channel %d offset is %d\n", channel, channel_offsets[channel]);
   }
+  fprintf(stderr, "Loaded \"%s\" as channel %d\n", filename, channel + 1);
 
-  //num_shapes = 0;
   int shape_count = 0;
   for (item = json->child, i = 0; item; item = item->next, i++) {
     index = cJSON_GetObjectItem(item, "index");
@@ -412,7 +412,6 @@ int main(int argc, char** argv) {
               exit(1);
           }
           layouts[num_channels - 1] = optarg;
-          fprintf(stderr, "Channel %d layout: %s\n", num_channels, layouts[num_channels - 1]);
           break;
       case 'p':
           port = strtol(optarg, NULL, 10);
