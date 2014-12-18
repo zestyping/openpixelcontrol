@@ -52,7 +52,7 @@ for ii in range(options.n_tall):
         x = math.sin(theta) * options.radius
         y = math.cos(theta) * options.radius
 
-        result.append('  {point: [%.4f, %.4f, %.4f]},' % (x, y, z))
+        result.append('  {"point": [%.4f, %.4f, %.4f]},' % (x, y, z))
 
 # trim off last comma
 result[-1] = result[-1][:-1]
