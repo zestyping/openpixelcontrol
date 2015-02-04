@@ -289,7 +289,7 @@ char* read_file(char* filename) {
   char* buffer;
 
   if (stat(filename, &st) != 0) {
-    return strdup("");
+	  return NULL;
   }
   buffer = malloc(st.st_size + 1);
   fp = fopen(filename, "r");
@@ -312,7 +312,15 @@ void init(char* filename) {
   int i = 0;
   
   buffer = read_file(filename);
+  if (buffer == NULL) {
+	  fprintf(stderr, "Unable to open '%s'\n", filename);
+	  exit(1);
+  }
   json = cJSON_Parse(buffer);
+  if (json == NULL) {
+	  fprintf(stderr, "Unable to parse '%s'\n", filename);
+	  exit(1);
+  }
   free(buffer);
 
   num_shapes = 0;
@@ -359,7 +367,6 @@ void init(char* filename) {
 int main(int argc, char** argv) {
   u16 port;
 
-  glutInit(&argc, argv);
   if (argc < 2) {
     fprintf(stderr, "Usage: %s <options> <filename.json> [<port>]\n", argv[0]);
     exit(1);
@@ -369,6 +376,7 @@ int main(int argc, char** argv) {
   port = port ? port : OPC_DEFAULT_PORT;
   source = opc_new_source(port);
 
+  glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
   glutCreateWindow("OPC");
   glutReshapeFunc(reshape);
