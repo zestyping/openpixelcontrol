@@ -435,7 +435,6 @@ int main(int argc, char** argv) {
   port = port ? port : OPC_DEFAULT_PORT;
   source = opc_new_source(port);
 
-  glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
   glutCreateWindow("OPC");
   glutReshapeFunc(reshape);
