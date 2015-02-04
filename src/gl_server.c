@@ -12,6 +12,7 @@ specific language governing permissions and limitations under the License. */
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 #include <sys/stat.h>
 #ifdef __APPLE__
@@ -41,6 +42,10 @@ double camera_aspect = 1.0;  // will be updated to match window aspect ratio
 
 // Shape parameters
 #define SHAPE_THICKNESS 0.06  // thickness of points and lines, metres
+
+#define MAX_CHANNELS 10
+int channel_offsets[MAX_CHANNELS];
+int num_channels= 0;
 
 // LED colours
 #define MAX_PIXELS 30000
@@ -241,7 +246,7 @@ void keyboard(unsigned char key, int x, int y) {
 }
 
 void handler(u8 channel, u16 count, pixel* p) {
-  int i = 0;
+  int i = 0, j = 0;
 
   if (verbose) {
     char* sep = " =";
@@ -257,8 +262,18 @@ void handler(u8 channel, u16 count, pixel* p) {
     printf("\n");
   }
 
+  if (channel > num_channels) {
+    return;
+  }
   for (i = 0; i < count; i++) {
-    pixels[i] = p[i];
+    if (channel == 0) {
+      // Channel 0 is broadcast
+      for (j = 0; j < num_channels; j++) {
+        pixels[i + channel_offsets[j]] = p[i];
+      }
+    } else {
+      pixels[i + channel_offsets[channel-1]] = p[i];
+    }
   }
 }
 
@@ -299,7 +314,7 @@ char* read_file(char* filename) {
   return buffer;
 }
 
-void init(char* filename) {
+void load_layout(char* filename, int channel) {
   char* buffer;
   cJSON* json;
   cJSON* item;
@@ -322,8 +337,13 @@ void init(char* filename) {
 	  exit(1);
   }
   free(buffer);
+  channel_offsets[channel] = num_pixels;
+  if (verbose) {
+    printf("Channel %d offset is %d\n", channel, channel_offsets[channel]);
+  }
+  fprintf(stderr, "Loaded \"%s\" as channel %d\n", filename, channel + 1);
 
-  num_shapes = 0;
+  int shape_count = 0;
   for (item = json->child, i = 0; item; item = item->next, i++) {
     index = cJSON_GetObjectItem(item, "index");
     if (index) {
@@ -333,11 +353,12 @@ void init(char* filename) {
     x = point ? point->child : NULL;
     if (x && x->next && x->next->next) {
       shapes[num_shapes].draw = draw_point;
-      shapes[num_shapes].index = i;
+      shapes[num_shapes].index = channel_offsets[channel] + i;
       shapes[num_shapes].g.point.x = x->valuedouble;
       shapes[num_shapes].g.point.y = x->next->valuedouble;
       shapes[num_shapes].g.point.z = x->next->next->valuedouble;
       num_shapes++;
+      shape_count++;
     }
     line = cJSON_GetObjectItem(item, "line");
     start = line ? line->child : NULL;
@@ -345,7 +366,7 @@ void init(char* filename) {
     x2 = start && start->next ? start->next->child : NULL;
     if (x && x->next && x->next->next && x2 && x2->next && x2->next->next) {
       shapes[num_shapes].draw = draw_line;
-      shapes[num_shapes].index = i;
+      shapes[num_shapes].index = channel_offsets[channel] + i;
       shapes[num_shapes].g.line.start.x = x->valuedouble;
       shapes[num_shapes].g.line.start.y = x->next->valuedouble;
       shapes[num_shapes].g.line.start.z = x->next->next->valuedouble;
@@ -353,26 +374,64 @@ void init(char* filename) {
       shapes[num_shapes].g.line.end.y = x2->next->valuedouble;
       shapes[num_shapes].g.line.end.z = x2->next->next->valuedouble;
       num_shapes++;
+      shape_count++;
     }
   }
-  num_pixels = i;
-  for (i = 0; i < num_pixels; i++) {
+  num_pixels += shape_count;
+  for (i = channel_offsets[channel]; i < shape_count; i++) {
     pixels[i].r = pixels[i].g = pixels[i].b = 1;
+  }
+}
+
+void init(char** filenames, int total_channels) {
+  int channel = 0, i = 0;
+  for (channel=0; channel < total_channels; channel++) {
+    load_layout(filenames[channel], channel);
   }
   for (i = 0; i < 256; i++) {
     xfer[i].r = xfer[i].g = xfer[i].b = 0.1 + i*0.9/256;
   }
 }
 
+void usage(char* prog_name) {
+  fprintf(stderr, "Usage: %s <options> -l <filename.json> [<port>]\n", prog_name);
+  exit(1);
+}
+
 int main(int argc, char** argv) {
   u16 port;
 
-  if (argc < 2) {
-    fprintf(stderr, "Usage: %s <options> <filename.json> [<port>]\n", argv[0]);
-    exit(1);
+  glutInit(&argc, argv);
+
+  int iflag = 0;
+  u8 channel = 1;
+  enum { WORD_MODE, LINE_MODE } op_mode = WORD_MODE;  // Default set
+  int opt;
+  char* layouts[MAX_CHANNELS];
+
+  while ((opt = getopt(argc, argv, ":l:p:")) != -1)
+  {
+      switch (opt)
+      {
+      case 'l':
+          num_channels += 1;
+          if (num_channels > MAX_CHANNELS) {
+              fprintf(stderr, "Can only simulate up to %d channels", MAX_CHANNELS);
+              exit(1);
+          }
+          layouts[num_channels - 1] = optarg;
+          break;
+      case 'p':
+          port = strtol(optarg, NULL, 10);
+          break;
+      default:
+          usage(argv[0]);
+      }
   }
-  init(argv[1]);
-  port = argc > 2 ? strtol(argv[2], NULL, 10) : 0;
+  if (num_channels == 0) {
+      usage(argv[0]);
+  }
+  init(layouts, num_channels);
   port = port ? port : OPC_DEFAULT_PORT;
   source = opc_new_source(port);
 
