@@ -42,7 +42,7 @@ Step 1. If you're using Linux, first get the dependencies you need
 Step 2. Compile and start the GL simulator using the example "Freespace" layout:
 
     make
-    bin/gl_server layouts/freespace.json
+    bin/gl_server -l layouts/freespace.json
 
 Step 3. Then in another terminal window, send colors to the simulator:
 
