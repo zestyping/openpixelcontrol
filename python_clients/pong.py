@@ -146,6 +146,8 @@ class AutoMatrix(Matrix):
         pass
 
     def renderloop(self):
+        if self.fps <= 0:
+            raise Exception('fps <= 0')
         while True:
             self.update()
             self.render()
@@ -159,6 +161,9 @@ class AnimatedImageMatrix(AutoMatrix, ImageMatrix):
 
     def load(self, filename, rsz_mode=0):
         self.img = Image.open(filename)
+        if self.fps == 0:
+            self.fps = 1000 / self.img.info['duration']
+            print('auto-set fps to {}'.format(self.fps))
         self.frame = 0
         self.rsz_mode = rsz_mode
 
@@ -171,6 +176,7 @@ class AnimatedImageMatrix(AutoMatrix, ImageMatrix):
         except EOFError:
             self.frame = 0
             self.img.seek(self.frame)
+            self.frame += 1
 
         self.feed(self.img)
 
@@ -229,11 +235,12 @@ else:
     print 'error: could not connect to %s' % IP_PORT
     sys.exit(1)
 
-matrix = AnimatedImageMatrix(client, 10, 20, 10)
+matrix = AnimatedImageMatrix(client, 10, 20, 0)
 try:
-    matrix.load('mario.gif', 1)
+    matrix.load('nyan.gif', 1)
     matrix.renderloop()
-except:
+except BaseException as e:
+    print(e)
     matrix.clear()
     matrix.render()
 finally:
@@ -264,7 +271,8 @@ finally:
 matrix = MatrixMatrix(client, 10, 20, 0.5)
 try:
     matrix.renderloop()
-except:
+except BaseException as e:
+    print(e)
     matrix.clear()
     matrix.render()
 finally:
