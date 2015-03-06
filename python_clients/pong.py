@@ -57,6 +57,7 @@ class Matrix(object):
         self.client = client
         self.numpix = self.width * self.height
         self.data = [[(0,0,0) for _ in range(self.height)] for _ in range(self.width)]
+        self.renderhack = False
 
     def fill(self, r, g, b):
         for y in range(self.height):
@@ -70,17 +71,72 @@ class Matrix(object):
         self.fill(255, 0, 0)
 
     def render(self):
-        pixels = []
-        for x in range(self.width):
-            for y in range(self.height):
-                pixels.append(self.data[x][y])
+        if self.renderhack:
+            pixels = []
+            for x in range(self.width):
+                for y in range(self.height) if x % 2 == 0 else [_ for _ in reversed(range(self.height))]:
+                    pixels.append(self.data[x][y])
+        else:
+            pixels = [self.data[x][y] for x in range(self.width) for y in range(self.height)]
         client.put_pixels(pixels, channel=0)
+
+from PIL import Image
+
+class ImageMatrix(Matrix):
+
+    rsz_fill = 0
+    rsz_adjust = 1
+
+    def load(self, filename, rsz_mode=0):
+        im = Image.open(filename)
+        self.feed(im, rsz_mode)
+        im.close()
+
+    def feed(self, image, rsz_mode=0):
+        xshift = 0
+        yshift = 0
+        width = 0
+        height = 0
+
+        # Adjust Mode
+        if rsz_mode == ImageMatrix.rsz_adjust:
+            # Calculting new size
+            (imw, imh) = image.size
+            #print('image ratio is {}'.format(imh / imw))
+            if imw / imh > self.width / self.height:
+                width = int(self.width)
+                height = int(imh * width / imw)
+                #print('{}x{} -> {}x{}'.format(imw, imh, neww, newh))
+            else:
+                height = int(self.height)
+                width = int(imw * height / imh)
+                #print('{}x{} -> {}x{}'.format(imw, imh, neww, newh))
+            # Shifting
+            xshift = int((self.width - width) / 2)
+            #print('{} -> {} (+{})'.format(self.width, neww, xshift))
+            yshift = int((self.height - height) / 2)
+            #print('{} -> {} (+{})'.format(self.height, newh, yshift))
+        # Fill Mode (default)
+        else:
+            width = self.width
+            height = self.height
+
+        # Feeding data to the internal matrix
+        self.clear()
+        data = list(image.convert('RGB').resize((width, height), Image.LANCZOS).getdata())
+        try:
+            pixels = []
+            for y in range(self.height):
+                for x in reversed(range(self.width)):
+                    self.data[x + xshift][y + yshift] = data.pop()
+        except IndexError:
+            pass
 
 class AutoMatrix(Matrix):
 
     def __init__(self, client, width, height, fps):
         super(AutoMatrix, self).__init__(client, width, height)
-        self.fps = fps
+        self.fps = float(fps)
         self.init()
 
     def init(self):
@@ -95,6 +151,29 @@ class AutoMatrix(Matrix):
             self.render()
             time.sleep(1 / self.fps)
 
+class AnimatedImageMatrix(AutoMatrix, ImageMatrix):
+
+    def __init__(self, *args, **kwargs):
+        super(self.__class__, self).__init__(*args, **kwargs)
+        self.img = None
+
+    def load(self, filename, rsz_mode=0):
+        self.img = Image.open(filename)
+        self.frame = 0
+        self.rsz_mode = rsz_mode
+
+    def update(self):
+        if self.img is None:
+            return
+        try:
+            self.img.seek(self.frame)
+            self.frame += 1
+        except EOFError:
+            self.frame = 0
+            self.img.seek(self.frame)
+
+        self.feed(self.img)
+
 class MatrixMatrix(AutoMatrix):
 
     def update(self):
@@ -104,7 +183,7 @@ class MatrixMatrix(AutoMatrix):
                 self.data[x].append((0, 255, 0))
             else:
                 trio = self.data[x][-1]
-                new = [int(_ * 0.99 if _ > 250 else _ * 0.75) for _ in trio]
+                new = [int(_ * 0.99 if _ > 250 else _ * 0.70) for _ in trio]
                 self.data[x].append(new)
 
 class PongMatrix(AutoMatrix):
@@ -140,8 +219,6 @@ class PongMatrix(AutoMatrix):
             self.data[0][self.players[0].y + y] = (255, 255, 255)
             self.data[-1][self.players[1].y + y] = (255, 255, 255)
 
-
-
 #-------------------------------------------------------------------------------
 # connect to server
 
@@ -151,16 +228,46 @@ if client.can_connect():
 else:
     print 'error: could not connect to %s' % IP_PORT
     sys.exit(1)
-print
 
-matrix = PongMatrix(client, 10, 20, 10)
+matrix = AnimatedImageMatrix(client, 10, 20, 10)
+try:
+    matrix.load('mario.gif', 1)
+    matrix.renderloop()
+except:
+    matrix.clear()
+    matrix.render()
+finally:
+    client.disconnect()
+    sys.exit(0)
 
+#matrix = ImageMatrix(client, 10, 20)
+#matrix.clear()
+#for filename in ('lol.jpg', 'facebook.jpg', 'pony.png', 'tetris-logo.png'):
+#    matrix.load(filename, 1)
+#    matrix.render()
+#    time.sleep(3)
+
+
+#while True:
+#    fps = 50
+#    npix = 10
+#    r = g = b = 255
+#    client.put_pixels([(0,g,0) for _ in range(npix)])
+#    time.sleep(1 / float(fps))
+#    r = g = b = 0
+#    client.put_pixels([(r,g,b) for _ in range(npix)])
+#    time.sleep(1 / float(fps))
+#
+#client.disconnect()
+#sys.exit(0)
+
+matrix = MatrixMatrix(client, 10, 20, 0.5)
 try:
     matrix.renderloop()
 except:
     matrix.clear()
     matrix.render()
-    raise
 finally:
     client.disconnect()
+    sys.exit(0)
 
