@@ -114,42 +114,6 @@ class Client(object):
             self.disconnect()
         return success
 
-    def put_pixel(self, pixel, channel=0):
-
-        self._debug('put_pixel: connecting')
-        is_connected = self._ensure_connected()
-        if not is_connected:
-            self._debug('put_pixel: not connected.  ignoring these pixels.')
-            return False
-
-        # build OPC message
-        len_hi_byte = 0
-        len_lo_byte = 3
-        header = chr(channel) + chr(0) + chr(len_hi_byte) + chr(len_lo_byte)
-        pieces = [header]
-        r, g, b = pixel
-        r = min(255, max(0, int(r)))
-        g = min(255, max(0, int(g)))
-        b = min(255, max(0, int(b)))
-        pieces.append(chr(r) + chr(g) + chr(b))
-        message = ''.join(pieces)
-
-        self._debug('put_pixels: sending pixels to server')
-        try:
-            self._socket.send(message)
-        except socket.error:
-            self._debug('put_pixels: connection lost.  could not send pixels.')
-            self._socket = None
-            return False
-
-        if not self._long_connection:
-            self._debug('put_pixels: disconnecting')
-            self.disconnect()
-
-        return True
-
-
-
     def put_pixels(self, pixels, channel=0):
         """Send the list of pixel colors to the OPC server on the given channel.
 
