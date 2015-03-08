@@ -1,10 +1,10 @@
-from __future__ import division
+from __future__ import division, print_function, absolute_import
 import time
 import math
 import sys
 import random
 
-from opc import Client
+from .opc import Client
 
 #-------------------------------------------------------------------------------
 # MatrixDriver
@@ -120,13 +120,12 @@ class AutoMatrix(Matrix):
                 startframe = [list(pixel) for pixel in self.pixels]
                 self.update()
                 endframe = [list(pixel) for pixel in self.pixels]
-                for _ in range(self.iframes):
-                    for i in range(len(self.pixels)):
-                        for n in range(3):
-                            self.pixels[i][n] = startframe[i][n]
+                for frame in range(self.iframes):
+                    self.pixels = [[t1 + ((t2 - t1) * (frame + 1) / (self.iframes + 1))
+                                  for t1, t2 in zip(startpixel, endpixel)]
+                                  for startpixel, endpixel in zip(startframe, endframe)]
                     self.render()
                     time.sleep(1 / (self.fps * (1 + self.iframes)))
-
                 self.pixels = endframe
                 self.render()
                 time.sleep(1 / (self.fps * (1 + self.iframes)))
