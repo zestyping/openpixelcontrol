@@ -31,10 +31,24 @@ import opcmatrix
 # handle command line
 
 choices = ['matrix', 'image', 'anim', 'test']
+drivers = {
+    'tetris': opcmatrix.TetrisMatrixDriver,
+    'viktetris': opcmatrix.VikTetrisMatrixDriver,
+    'freespace': opcmatrix.FreespaceMatrixDriver,
+}
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-H', dest='IP_PORT', default="127.0.0.1:7890")
-parser.add_argument('-t', dest='type', required='True', choices=choices)
+parser.add_argument('-H', dest='IP_PORT', default="127.0.0.1:7890",
+                    help='IP:PORT to connect to')
+parser.add_argument('-t', dest='type', metavar='type', required='True',
+                    choices=choices, help='the feature to show')
+parser.add_argument('-f', dest='fps', metavar='fps', type=int,
+                    help='number of frames per second', default=0)
+parser.add_argument('-i', dest='iframes', metavar='frames', type=int,
+                    help='interpolation frames', default=0)
+parser.add_argument('-d', dest='driver', metavar='driver', type=str,
+                    default='freespace', choices=drivers.keys(),
+                    help='the screen driver')
 args = parser.parse_args()
 
 #-------------------------------------------------------------------------------
@@ -50,17 +64,19 @@ else:
 #-------------------------------------------------------------------------------
 # start processing
 
-#driver = opcmatrix.TetrisMatrixDriver()
-driver = opcmatrix.FreespaceMatrixDriver()
+print('using {} driver'.format(args.driver))
+driver = drivers[args.driver]()
 matrix = None
 animated = False
 
 if args.type == 'matrix':
     animated = True
-    matrix = opcmatrix.MatrixMatrix(client, driver, 1, 10)
+    matrix = opcmatrix.MatrixMatrix(client, driver,
+                                    args.fps + 1, args.iframes)
 elif args.type == 'anim':
     animated = True
-    matrix = opcmatrix.AnimatedImageMatrix(client, driver, 0)
+    matrix = opcmatrix.AnimatedImageMatrix(client, driver,
+                                           args.fps, args.iframes)
     matrix.load('images/NyanCat.gif', 0)
 elif args.type == 'image':
     matrix = opcmatrix.ImageMatrix(client, driver)
@@ -89,29 +105,3 @@ else:
     finally:
         client.disconnect()
         sys.exit(0)
-
-
-#matrix = AnimatedImageMatrix(client, 10, 20, 0)
-#try:
-#    matrix.load('nyan.gif', 1)
-#    matrix.renderloop()
-#except BaseException as e:
-#    print(e)
-#    matrix.clear()
-#    matrix.render()
-#finally:
-#    client.disconnect()
-#    sys.exit(0)
-
-#while True:
-#    fps = 50
-#    npix = 10
-#    r = g = b = 255
-#    client.put_pixels([(0,g,0) for _ in range(npix)])
-#    time.sleep(1 / float(fps))
-#    r = g = b = 0
-#    client.put_pixels([(r,g,b) for _ in range(npix)])
-#    time.sleep(1 / float(fps))
-#
-#client.disconnect()
-#sys.exit(0)
