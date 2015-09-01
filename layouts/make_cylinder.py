@@ -32,7 +32,7 @@ options, args = parser.parse_args()
 # figure out how many pixels are needed around the cylinder
 # in order to get square pixels
 if not options.n_tall:
-    options.n_tall = int(options.n_around * options.height / options.radius / math.pi)
+    options.n_tall = int(options.n_around * options.height / (options.radius * 2 * math.pi))
 
 options.n_tall = max(1, options.n_tall)
 
@@ -41,11 +41,7 @@ options.n_tall = max(1, options.n_tall)
 
 result = ['[']
 for ii in range(options.n_tall):
-    if options.n_tall == 1:
-        z = 0
-    else:
-        z = (ii / (options.n_tall-1)) * 2 - 1
-    z *= options.height
+    z = (-0.5 + 1/options.n_tall * (0.5 + ii)) * options.height
 
     for jj in range(options.n_around):
         theta = jj / options.n_around * math.pi * 2
