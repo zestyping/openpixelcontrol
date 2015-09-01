@@ -16,12 +16,16 @@ static int spi_fd = -1;
 static u8 spi_data_tx[((1 << 16) / 3) * 4 + 5];
 static u32 spi_speed_hz = SPI_DEFAULT_SPEED_HZ;
 
+static u8 gamma_table_red[256];
+static u8 gamma_table_green[256];
+static u8 gamma_table_blue[256];
 
 void tcl_put_pixels(int fd, u8 spi_data_tx[], u16 count, pixel* pixels) {
   int i;
   pixel* p;
   u8* d;
   u8 flag;
+  u8 r, g, b;
 
   d = spi_data_tx;
   *d++ = 0;
@@ -29,11 +33,15 @@ void tcl_put_pixels(int fd, u8 spi_data_tx[], u16 count, pixel* pixels) {
   *d++ = 0;
   *d++ = 0;
   for (i = 0, p = pixels; i < count; i++, p++) {
-    flag = (p->r & 0xc0) >> 6 | (p->g & 0xc0) >> 4 | (p->b & 0xc0) >> 2;
+    r = gamma_table_red[p->r];
+    g = gamma_table_green[p->g];
+    b = gamma_table_blue[p->b];
+
+    flag = (r & 0xc0) >> 6 | (g & 0xc0) >> 4 | (b & 0xc0) >> 2;
     *d++ = ~flag;
-    *d++ = p->b;
-    *d++ = p->g;
-    *d++ = p->r;
+    *d++ = r;
+    *d++ = g;
+    *d++ = b;
   }
   spi_write(fd, spi_data_tx, d - spi_data_tx);
 }
@@ -45,6 +53,15 @@ void handler(u8 address, u16 count, pixel* pixels) {
   tcl_put_pixels(spi_fd, spi_data_tx, count, pixels);
 }
 
+void set_gamma(double gamma_red, double gamma_green, double gamma_blue) {
+  int i;
+  
+  for(i=0;i<256;i++) {
+    gamma_table_red[i] = (uint8_t)(pow(i/255.0,gamma_red)*255.0+0.5);
+    gamma_table_green[i] = (uint8_t)(pow(i/255.0,gamma_green)*255.0+0.5);
+    gamma_table_blue[i] = (uint8_t)(pow(i/255.0,gamma_blue)*255.0+0.5);
+  }
+}
 
 int main(int argc, char** argv) {
   u16 port = OPC_DEFAULT_PORT;
@@ -57,6 +74,8 @@ int main(int argc, char** argv) {
     return 1;
   }
   fprintf(stderr, "SPI speed: %.2f MHz, ready...\n", spi_speed_hz*1e-6);
+  /* set gamma correction */
+  set_gamma(2.2,2.2,2.2);
   opc_source s = opc_new_source(port);
   while (s >= 0 && opc_receive(s, handler, TIMEOUT_MS));
   fprintf(stderr, "Exiting after %d ms of inactivity\n", TIMEOUT_MS);
