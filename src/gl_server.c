@@ -41,7 +41,10 @@ double camera_distance = 16.0;  // distance from origin, metres
 double camera_aspect = 1.0;  // will be updated to match window aspect ratio
 
 // Shape parameters
-#define SHAPE_THICKNESS 0.06  // thickness of points and lines, metres
+#define DEFAULT_SHAPE_THICKNESS 0.06  // thickness of points and lines, metres
+#define DEFAULT_NO_OF_SLICES 6  // number of slices for shape
+int no_of_slices = 0;
+float shape_tickness = 0;
 
 #define MAX_CHANNELS 10
 int channel_offsets[MAX_CHANNELS];
@@ -130,7 +133,7 @@ void draw_point(shape* this, GLUquadric* quad) {
   glColor3d(xfer[p.r].r, xfer[p.g].g, xfer[p.b].b);
   glPushMatrix();
   glTranslatef(this->g.point.x, this->g.point.y, this->g.point.z);
-  gluSphere(quad, SHAPE_THICKNESS/2, 6, 3);
+  gluSphere(quad, shape_tickness/2, no_of_slices, no_of_slices/2);
   glPopMatrix();
 }
 
@@ -146,10 +149,10 @@ void draw_line(shape* this, GLUquadric* quad) {
   glPushMatrix();
   glTranslated(start.x, start.y, start.z);
   glRotated(angle, hinge.x, hinge.y, hinge.z);
-  gluSphere(quad, SHAPE_THICKNESS/2, 6, 3);
-  gluCylinder(quad, SHAPE_THICKNESS/2, SHAPE_THICKNESS/2, len, 6, 1);
+  gluSphere(quad, shape_tickness/2, 6, 3);
+  gluCylinder(quad, shape_tickness/2, shape_tickness/2, len, 6, 1);
   glTranslated(0, 0, len);
-  gluSphere(quad, SHAPE_THICKNESS/2, 6, 3);
+  gluSphere(quad, shape_tickness/2, no_of_slices, no_of_slices/2);
   glPopMatrix();
 }
 
@@ -325,7 +328,7 @@ void load_layout(char* filename, int channel) {
   cJSON* start;
   cJSON* x2;
   int i = 0;
-  
+
   buffer = read_file(filename);
   if (buffer == NULL) {
 	  fprintf(stderr, "Unable to open '%s'\n", filename);
@@ -394,12 +397,12 @@ void init(char** filenames, int total_channels) {
 }
 
 void usage(char* prog_name) {
-  fprintf(stderr, "Usage: %s <options> -l <filename.json> [<port>]\n", prog_name);
+  fprintf(stderr, "Usage: %s <options> -l <filename.json> [-p <port>] [-s <no_of_slices] [-t <shape_thickness]\n", prog_name);
   exit(1);
 }
 
 int main(int argc, char** argv) {
-  u16 port;
+  u16 port = 0;
 
   glutInit(&argc, argv);
 
@@ -409,7 +412,7 @@ int main(int argc, char** argv) {
   int opt;
   char* layouts[MAX_CHANNELS];
 
-  while ((opt = getopt(argc, argv, ":l:p:")) != -1)
+  while ((opt = getopt(argc, argv, ":l:p:s:t:")) != -1)
   {
       switch (opt)
       {
@@ -422,7 +425,19 @@ int main(int argc, char** argv) {
           layouts[num_channels - 1] = optarg;
           break;
       case 'p':
+          if (port)
+              usage(argv[0]);
           port = strtol(optarg, NULL, 10);
+          break;
+      case 's':
+          if (no_of_slices)
+              usage(argv[0]);
+          no_of_slices = strtol(optarg, NULL, 10);
+          break;
+      case 't':
+          if (shape_tickness)
+              usage(argv[0]);
+          shape_tickness = strtof(optarg, NULL);
           break;
       default:
           usage(argv[0]);
@@ -433,6 +448,8 @@ int main(int argc, char** argv) {
   }
   init(layouts, num_channels);
   port = port ? port : OPC_DEFAULT_PORT;
+  no_of_slices = no_of_slices ? no_of_slices : DEFAULT_NO_OF_SLICES;
+  shape_tickness = shape_tickness ? shape_tickness : DEFAULT_SHAPE_THICKNESS;
   source = opc_new_source(port);
 
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
