@@ -26,6 +26,10 @@ bin/tcl_server: src/tcl_server.c src/opc_server.c src/spi.c
 	mkdir -p bin
 	gcc ${CFLAGS} -o $@ $^
 
+bin/apa102_server: src/apa102_server.c src/opc_server.c src/spi.c
+	mkdir -p bin
+	gcc ${CFLAGS} -o $@ $^
+
 bin/ws2801_server: src/ws2801_server.c src/opc_server.c src/spi.c
 	mkdir -p bin
 	gcc ${CFLAGS} -o $@ $^
