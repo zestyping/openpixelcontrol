@@ -14,7 +14,7 @@ specific language governing permissions and limitations under the License. */
 
 #define APA102_BRIGHTNESS 31  /* overall brightness level, 0 to 31 */
 
-static u8 buffer[4 + OPC_MAX_PIXELS_PER_MESSAGE * 4 + 4];
+static u8 buffer[4 + OPC_MAX_PIXELS_PER_MESSAGE * 4];
 
 void apa102_put_pixels(int fd, u8* buffer, u16 count, pixel* pixels) {
   int i;
@@ -33,10 +33,6 @@ void apa102_put_pixels(int fd, u8* buffer, u16 count, pixel* pixels) {
     *d++ = p->g;
     *d++ = p->r;
   }
-  *d++ = 0xff;
-  *d++ = 0xff;
-  *d++ = 0xff;
-  *d++ = 0xff;
   spi_write(fd, buffer, d - buffer);
 }
 
