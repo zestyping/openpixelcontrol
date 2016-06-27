@@ -73,14 +73,17 @@ appropriate for your LED chipset; pick one:
 **Step 4.** Connect the ground, data, and clock wires of your LED strand
 to the appropriate breakout pins on the Beaglebone.  For `/dev/spidev1.0`,
 data is P9 pin 18 and clock is P9 pin 22.  For `/dev/spidev2.0`, data
-is P9 pin 30 and clock is P9 pin 31.  Ground is on P9 pin 1.
+is P9 pin 30 and clock is P9 pin 31.  Ground is on P9 pin 1. See
+http://beagleboard.org/Support/bone101/#headers for a nice picture.
 
 **Step 5.** Connect the power wire of your LED strand _either_ to a
 separate 5V power source, _or_ to your Beaglebone's power on P9 pin 5;
-choose one or the other, not both.  (If you are using USB to power your
+choose one or the other, not both.  If you are using USB to power your
 Beaglebone and also using your Beaglebone to power the LEDs, there will
 only be enough power to light a small number of LEDs at full brightness
-at any given moment.)
+at any given moment.  If you need to light a lot of LEDs and are adding
+external power sources to provide more power down the line, use _only_
+external power sources and do not connect to the Beaglebone's power pin.
 
 **Step 6.** Run the server on your Beaglebone, specifying the SPI speed,
 port number, and device path you want to use.  For example, to run the
