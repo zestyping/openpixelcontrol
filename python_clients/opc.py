@@ -154,7 +154,10 @@ class Client(object):
             g = min(255, max(0, int(g)))
             b = min(255, max(0, int(b)))
             pieces.append(chr(r) + chr(g) + chr(b))
-        message = ''.join(pieces)
+        if bytes is str:
+            message = ''.join(pieces)
+        else:
+            message = bytes(map(ord, ''.join(pieces)))
 
         self._debug('put_pixels: sending pixels to server')
         try:
