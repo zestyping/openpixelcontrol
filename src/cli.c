@@ -33,9 +33,10 @@ void opc_serve_handler(u8 address, u16 count, pixel* pixels) {
 
 int opc_serve_main(char* spi_device_path, u32 spi_speed_hz, u16 port,
                     put_pixels_func* put, u8* buffer) {
-  pixel diagnostic_pixel;
+  pixel diagnostic_pixels[5];
   time_t t;
   u16 inactivity_ms = 0;
+  int i;
 
   spi_fd = init_spidev(spi_device_path, spi_speed_hz);
   if (spi_fd < 0) {
@@ -50,16 +51,21 @@ int opc_serve_main(char* spi_device_path, u32 spi_speed_hz, u16 port,
   fprintf(stderr, "SPI speed: %.2f MHz, ready...\n", spi_speed_hz*1e-6);
   put_pixels = put;
   put_pixels_buffer = buffer;
+  for (i = 0; i < 5; i++) {
+      diagnostic_pixels[i].r = 0;
+      diagnostic_pixels[i].g = 0;
+      diagnostic_pixels[i].b = 0;
+  }
   while (inactivity_ms < INACTIVITY_TIMEOUT_MS) {
       if (opc_receive(s, opc_serve_handler, DIAGNOSTIC_TIMEOUT_MS)) {
           inactivity_ms = 0;
       } else {
           inactivity_ms += DIAGNOSTIC_TIMEOUT_MS;
           t = time(NULL);
-          diagnostic_pixel.r = (t % 3 == 0) ? 64 : 0;
-          diagnostic_pixel.g = (t % 3 == 1) ? 64 : 0;
-          diagnostic_pixel.b = (t % 3 == 2) ? 64 : 0;
-          put_pixels(spi_fd, buffer, 1, &diagnostic_pixel);
+          diagnostic_pixels[0].r = (t % 3 == 0) ? 64 : 0;
+          diagnostic_pixels[0].g = (t % 3 == 1) ? 64 : 0;
+          diagnostic_pixels[0].b = (t % 3 == 2) ? 64 : 0;
+          put_pixels(spi_fd, buffer, 5, diagnostic_pixels);
       }
   }
   fprintf(stderr, "Exiting after %d ms of inactivity\n",
