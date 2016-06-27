@@ -22,11 +22,11 @@ repository includes these programs:
   control Total Control Lighting pixels (see http://coolneon.com/) that
   are connected to the SPI port on a Beaglebone.
 
-* python_clients/opc.py: A python library for connecting and sending pixels.
+* python/opc.py: A python library for connecting and sending pixels.
 
-* python_clients/color_utils.py: A python library for manipulating colors.
+* python/color_utils.py: A python library for manipulating colors.
 
-* python_clients/raver_plaid.py: An example client that sends rainbow patterns.
+* python/raver_plaid.py: An example client that sends rainbow patterns.
 
 To build these programs, run "make" and then look in the bin/ directory.
 
@@ -46,4 +46,4 @@ Step 2. Compile and start the GL simulator using the example "Freespace" layout:
 
 Step 3. Then in another terminal window, send colors to the simulator:
 
-    python_clients/raver_plaid.py
+    python/raver_plaid.py
