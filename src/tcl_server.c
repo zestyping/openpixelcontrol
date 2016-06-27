@@ -9,21 +9,18 @@ under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 CONDITIONS OF ANY KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations under the License. */
 
-#include "spi.h"
+#include "cli.h"
 #include "opc.h"
 
-static int spi_fd = -1;
-static u8 spi_data_tx[((1 << 16) / 3) * 4 + 5];
-static u32 spi_speed_hz = SPI_DEFAULT_SPEED_HZ;
+static u8 buffer[4 + OPC_MAX_PIXELS_PER_MESSAGE * 4];
 
-
-void tcl_put_pixels(int fd, u8 spi_data_tx[], u16 count, pixel* pixels) {
+void tcl_put_pixels(int fd, u8 buffer[], u16 count, pixel* pixels) {
   int i;
   pixel* p;
   u8* d;
   u8 flag;
 
-  d = spi_data_tx;
+  d = buffer;
   *d++ = 0;
   *d++ = 0;
   *d++ = 0;
@@ -35,35 +32,18 @@ void tcl_put_pixels(int fd, u8 spi_data_tx[], u16 count, pixel* pixels) {
     *d++ = p->g;
     *d++ = p->r;
   }
-  spi_write(fd, spi_data_tx, d - spi_data_tx);
+  spi_write(fd, buffer, d - buffer);
 }
-
-
-void handler(u8 address, u16 count, pixel* pixels) {
-  fprintf(stderr, "%d ", count);
-  fflush(stderr);
-  tcl_put_pixels(spi_fd, spi_data_tx, count, pixels);
-}
-
 
 int main(int argc, char** argv) {
   u16 port = OPC_DEFAULT_PORT;
-  pixel diagnostic_pixel;
-  time_t t;
+  u32 spi_speed_hz = 8000000;
+  char* spi_device_path = "/dev/spidev1.0";
 
   get_speed_and_port(&spi_speed_hz, &port, argc, argv);
-  spi_fd = init_spidev("/dev/spidev2.0", spi_speed_hz);
-  if (spi_fd < 0) {
-    return 1;
+  if (argc > 3) {
+    spi_device_path = argv[3];
   }
-  fprintf(stderr, "SPI speed: %.2f MHz, ready...\n", spi_speed_hz*1e-6);
-  opc_source s = opc_new_source(port);
-  while (s >= 0 && opc_receive(s, handler, TIMEOUT_MS));
-  fprintf(stderr, "Exiting after %d ms of inactivity\n", TIMEOUT_MS);
-
-  t = time(NULL);
-  diagnostic_pixel.r = (t % 3 == 0) ? 64 : 0;
-  diagnostic_pixel.g = (t % 3 == 1) ? 64 : 0;
-  diagnostic_pixel.b = (t % 3 == 2) ? 64 : 0;
-  tcl_put_pixels(spi_fd, spi_data_tx, 1, &diagnostic_pixel);
+  return opc_serve_main(spi_device_path, spi_speed_hz, port,
+                        tcl_put_pixels, buffer);
 }

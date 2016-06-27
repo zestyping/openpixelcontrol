@@ -5,7 +5,7 @@ ifeq ($(platform),Darwin)
   ALL=bin/dummy_client bin/dummy_server bin/gl_server
   GL_OPTS=-framework OpenGL -framework GLUT -Wno-deprecated-declarations
 else ifeq ($(platform),Linux)
-  ALL=bin/dummy_client bin/dummy_server bin/tcl_server bin/ws2801_server bin/lpd8806_server bin/gl_server
+  ALL=bin/dummy_client bin/dummy_server bin/tcl_server bin/apa102_server bin/ws2801_server bin/lpd8806_server bin/gl_server
   GL_OPTS=-lGL -lglut -lGLU -lm
 endif
 
@@ -22,19 +22,19 @@ bin/dummy_server: src/dummy_server.c src/opc_server.c
 	mkdir -p bin
 	gcc ${CFLAGS} -o $@ $^
 
-bin/tcl_server: src/tcl_server.c src/opc_server.c src/spi.c
+bin/tcl_server: src/tcl_server.c src/opc_server.c src/spi.c src/cli.c
 	mkdir -p bin
 	gcc ${CFLAGS} -o $@ $^
 
-bin/apa102_server: src/apa102_server.c src/opc_server.c src/spi.c
+bin/apa102_server: src/apa102_server.c src/opc_server.c src/spi.c src/cli.c
 	mkdir -p bin
 	gcc ${CFLAGS} -o $@ $^
 
-bin/ws2801_server: src/ws2801_server.c src/opc_server.c src/spi.c
+bin/ws2801_server: src/ws2801_server.c src/opc_server.c src/spi.c src/cli.c
 	mkdir -p bin
 	gcc ${CFLAGS} -o $@ $^
 
-bin/lpd8806_server: src/lpd8806_server.c src/opc_server.c src/spi.c
+bin/lpd8806_server: src/lpd8806_server.c src/opc_server.c src/spi.c src/cli.c
 	mkdir -p bin
 	gcc ${CFLAGS} -o $@ $^
 

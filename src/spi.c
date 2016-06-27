@@ -11,17 +11,6 @@ specific language governing permissions and limitations under the License. */
 
 #include "spi.h"
 
-
-void get_speed_and_port(u32* speed, u16* port, int argc, char** argv) {
-  if (argc > 1 && speed) {
-    *speed = strtol(argv[1], 0, 10)*1000000;
-  }
-  if (argc > 2 && port) {
-    *port = atoi(argv[2]);
-  }
-}
-
-
 void spi_transfer(int fd, u32 spi_speed_hz, u8* tx, u8* rx, u32 len, u16 delay) {
   struct spi_ioc_transfer transfer;
   transfer.tx_buf = (unsigned long) tx;
@@ -34,7 +23,6 @@ void spi_transfer(int fd, u32 spi_speed_hz, u8* tx, u8* rx, u32 len, u16 delay) 
     fprintf(stderr, "Write failed\n");
   }
 }
-
 
 void spi_write(int fd, u8* tx, u32 len) {
   int block;

@@ -27,6 +27,9 @@ specific language governing permissions and limitations under the License. */
 #define OPC_MAX_SINKS 64
 #define OPC_MAX_SOURCES 64
 
+/* Maximum number of pixels in one message */
+#define OPC_MAX_PIXELS_PER_MESSAGE ((1 << 16) / 3)
+
 // OPC client functions ----------------------------------------------------
 
 /* Handle for an OPC sink created by opc_new_sink. */
