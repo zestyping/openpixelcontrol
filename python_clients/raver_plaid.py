@@ -52,14 +52,14 @@ if client.can_connect():
 else:
     # can't connect, but keep running in case the server appears later
     print('    WARNING: could not connect to %s' % IP_PORT)
-print()
+print('')
 
 
 #-------------------------------------------------------------------------------
 # send pixels
 
 print('    sending pixels forever (control-c to exit)...')
-print()
+print('')
 
 n_pixels = 1250  # number of pixels in the included "wall" layout
 fps = 60         # frames per second
