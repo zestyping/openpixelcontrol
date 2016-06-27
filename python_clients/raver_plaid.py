@@ -35,11 +35,11 @@ if len(sys.argv) == 1:
 elif len(sys.argv) == 2 and ':' in sys.argv[1] and not sys.argv[1].startswith('-'):
     IP_PORT = sys.argv[1]
 else:
-    print
-    print '    Usage: raver_plaid.py [ip:port]'
-    print
-    print '    If not set, ip:port defauls to 127.0.0.1:7890'
-    print
+    print('''
+Usage: raver_plaid.py [ip:port]
+
+If not set, ip:port defauls to 127.0.0.1:7890
+''')
     sys.exit(0)
 
 
@@ -48,21 +48,21 @@ else:
 
 client = opc.Client(IP_PORT)
 if client.can_connect():
-    print '    connected to %s' % IP_PORT
+    print('    connected to %s' % IP_PORT)
 else:
     # can't connect, but keep running in case the server appears later
-    print '    WARNING: could not connect to %s' % IP_PORT
-print
+    print('    WARNING: could not connect to %s' % IP_PORT)
+print()
 
 
 #-------------------------------------------------------------------------------
 # send pixels
 
-print '    sending pixels forever (control-c to exit)...'
-print
+print('    sending pixels forever (control-c to exit)...')
+print()
 
 n_pixels = 1250  # number of pixels in the included "wall" layout
-fps = 20         # frames per second
+fps = 60         # frames per second
 
 # how many sine wave cycles are squeezed into our n_pixels
 # 24 happens to create nice diagonal stripes on the wall layout
@@ -77,10 +77,10 @@ speed_b = 19
 
 start_time = time.time()
 while True:
-    t = time.time() - start_time
+    t = (time.time() - start_time) * 5
     pixels = []
     for ii in range(n_pixels):
-        pct = ii / n_pixels
+        pct = (ii / n_pixels)
         # diagonal black stripes
         pct_jittered = (pct * 77) % 37
         blackstripes = color_utils.cos(pct_jittered, offset=t*0.05, period=1, minn=-1.5, maxx=1.5)
