@@ -70,7 +70,7 @@ class Client(object):
 
     def _debug(self, m):
         if self.verbose:
-            print '    %s' % str(m)
+            print('    %s' % str(m))
 
     def _ensure_connected(self):
         """Set up a connection if one doesn't already exist.
@@ -85,6 +85,7 @@ class Client(object):
         try:
             self._debug('_ensure_connected: trying to connect...')
             self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._socket.settimeout(1)
             self._socket.connect((self._ip, self._port))
             self._debug('_ensure_connected:    ...success')
             return True
