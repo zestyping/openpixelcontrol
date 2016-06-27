@@ -74,9 +74,9 @@ data is P9 pin 18 and clock is P9 pin 22.  For `/dev/spidev2.0`, data
 is P9 pin 30 and clock is P9 pin 31.  Ground is on P9 pin 1.
 Connect the power wire of your LED strand _either_ to a separate 5V power
 source, _or_ to your Beaglebone's power on P9 pin 5; choose one or the
-other, not both.  (If you are using USB to power your Beaglebone, and
-using your Beaglebone to power the LEDs, you will only be able to light
-a small number of LEDs.)
+other, not both.  (If you are using USB to power your Beaglebone and also
+using your Beaglebone to power the LEDs, there will only be enough power
+to light a small number of LEDs at full brightness at any given moment.)
 
 Step 4. Run the server on your Beaglebone, specifying the SPI speed,
 port number, and device path you want to use.  For example, to run the
