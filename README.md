@@ -59,8 +59,8 @@ Quickstart (Beaglebone)
     cape_disable=capemgr.disable_partno=BB-BONELT-HDMI,BB-BONELT-HDMIN
     cape_enable=capemgr.enable_partno=BB-SPIDEV0,BB-SPIDEV1
 
-**Step 2.** Reboot your Beaglebone.  You should now see two files at
-`/dev/spidev1.0` and `/dev/spidev2.0`.
+**Step 2.** Type `reboot` to reboot your Beaglebone.  You should now
+see two files at `/dev/spidev1.0` and `/dev/spidev2.0`.
 
 **Step 3.** Copy the code to your Beaglebone and compile the server
 appropriate for your LED chipset; pick one:
