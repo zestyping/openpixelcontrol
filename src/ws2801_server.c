@@ -15,12 +15,13 @@ typedef enum { RGB=0, GRB=1, BGR=2 } order_t;
 static u32 spi_speed_hz = WS2801_DEFAULT_SPEED;
 static u8 buffer[1 << 16];
 static order_t rgb_order = DEFAULT_INPUT_ORDER;
+static int spi_fd;
 
-void ws2801_put_pixels(int fd, u8 buffer[], u16 count, pixel* pixels) {
+void ws2801_put_pixels(u8 buffer[], u16 count, pixel* pixels) {
   int i;
   pixel* p;
   u8* d;
-  
+
   d = buffer;
   for (i = 0, p = pixels; i < count; i++, p++) {
     switch (rgb_order)
@@ -42,7 +43,7 @@ void ws2801_put_pixels(int fd, u8 buffer[], u16 count, pixel* pixels) {
       break;
     }
   }
-  spi_transfer(fd, spi_speed_hz, buffer, 0, d - buffer, POST_TX_DELAY_USECS);
+  spi_transfer(spi_fd, spi_speed_hz, buffer, 0, d - buffer, POST_TX_DELAY_USECS);
 }
 
 order_t get_order(int argc, char** argv) {
@@ -67,6 +68,6 @@ int main(int argc, char** argv) {
 
   get_speed_and_port(&spi_speed_hz, &port, argc, argv);
   rgb_order = get_order(argc, argv);
-  return opc_serve_main(spi_device_path, spi_speed_hz, port,
-                        ws2801_put_pixels, buffer);
+  spi_fd = opc_open_spi(spi_device_path, spi_speed_hz);
+  return opc_serve_main(port, ws2801_put_pixels, buffer);
 }

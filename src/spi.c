@@ -10,6 +10,7 @@ CONDITIONS OF ANY KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations under the License. */
 
 #include "spi.h"
+#include <unistd.h>
 
 void spi_transfer(int fd, u32 spi_speed_hz, u8* tx, u8* rx, u32 len, u16 delay) {
   struct spi_ioc_transfer transfer;

@@ -24,11 +24,13 @@ void get_speed_and_port(u32* speed, u16* port, int argc, char** argv);
 
 // Send pixel data to LED hardware.  Caller is expected to provide a buffer
 // large enough for the hardware-specific data frame for all the pixels.
-typedef void put_pixels_func(int fd, u8* buffer, u16 count, pixel* pixels);
+typedef void put_pixels_func(u8* buffer, u16 count, pixel* pixels);
 
 // Listen for TCP connections on the specified port, receive OPC data, and
 // transmit it to the specified SPI device using the given put_pixels function.
-int opc_serve_main(char* spi_device_path, u32 spi_speed_hz, u16 port,
-                   put_pixels_func* put_pixels, u8* buffer);
+int opc_serve_main(u16 port, put_pixels_func* put_pixels, u8* buffer);
+
+// Opens a SPI device for writing pixel data.
+int opc_open_spi(char* spi_device_path, u32 spi_speed_hz);
 
 #endif

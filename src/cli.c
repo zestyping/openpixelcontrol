@@ -11,6 +11,7 @@ specific language governing permissions and limitations under the License. */
 
 #include "cli.h"
 #include "spi.h"
+#include <stdlib.h>
 
 void get_speed_and_port(u32* speed, u16* port, int argc, char** argv) {
   if (argc > 1 && speed) {
@@ -21,34 +22,34 @@ void get_speed_and_port(u32* speed, u16* port, int argc, char** argv) {
   }
 }
 
-static int spi_fd = -1;
 static u8* put_pixels_buffer;
 static put_pixels_func* put_pixels;
 
 void opc_serve_handler(u8 address, u16 count, pixel* pixels) {
   fprintf(stderr, "%d ", count);
   fflush(stderr);
-  put_pixels(spi_fd, put_pixels_buffer, count, pixels);
+  put_pixels(put_pixels_buffer, count, pixels);
 }
 
-int opc_serve_main(char* spi_device_path, u32 spi_speed_hz, u16 port,
-                    put_pixels_func* put, u8* buffer) {
+int opc_open_spi(char* spi_device_path, u32 spi_speed_hz) {
+  int spi_fd = init_spidev(spi_device_path, spi_speed_hz);
+  if (spi_fd < 0) exit(1);
+  fprintf(stderr, "Device %s: %.2f MHz\n", spi_device_path, spi_speed_hz*1e-6);
+  return spi_fd;
+}
+
+int opc_serve_main(u16 port, put_pixels_func* put, u8* buffer) {
   pixel diagnostic_pixels[5];
   time_t t;
   u16 inactivity_ms = 0;
   int i;
 
-  spi_fd = init_spidev(spi_device_path, spi_speed_hz);
-  if (spi_fd < 0) {
-    fprintf(stderr, "Could not open SPI device at %s\n", spi_device_path);
-    return 1;
-  }
   opc_source s = opc_new_source(port);
   if (s < 0) {
     fprintf(stderr, "Could not create OPC source\n");
     return 1;
   }
-  fprintf(stderr, "SPI speed: %.2f MHz, ready...\n", spi_speed_hz*1e-6);
+  fprintf(stderr, "Ready...\n");
   put_pixels = put;
   put_pixels_buffer = buffer;
   for (i = 0; i < 5; i++) {
@@ -65,7 +66,7 @@ int opc_serve_main(char* spi_device_path, u32 spi_speed_hz, u16 port,
           diagnostic_pixels[0].r = (t % 3 == 0) ? 64 : 0;
           diagnostic_pixels[0].g = (t % 3 == 1) ? 64 : 0;
           diagnostic_pixels[0].b = (t % 3 == 2) ? 64 : 0;
-          put_pixels(spi_fd, buffer, 5, diagnostic_pixels);
+          put_pixels(buffer, 5, diagnostic_pixels);
       }
   }
   fprintf(stderr, "Exiting after %d ms of inactivity\n",

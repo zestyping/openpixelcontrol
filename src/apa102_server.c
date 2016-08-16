@@ -11,12 +11,14 @@ specific language governing permissions and limitations under the License. */
 
 #include "cli.h"
 #include "opc.h"
+#include "spi.h"
 
 #define APA102_BRIGHTNESS 31  /* overall brightness level, 0 to 31 */
 
 static u8 buffer[4 + OPC_MAX_PIXELS_PER_MESSAGE * 4];
+static int spi_fd;
 
-void apa102_put_pixels(int fd, u8* buffer, u16 count, pixel* pixels) {
+void apa102_put_pixels(u8* buffer, u16 count, pixel* pixels) {
   int i;
   pixel* p;
   u8* d;
@@ -33,7 +35,7 @@ void apa102_put_pixels(int fd, u8* buffer, u16 count, pixel* pixels) {
     *d++ = p->g;
     *d++ = p->r;
   }
-  spi_write(fd, buffer, d - buffer);
+  spi_write(spi_fd, buffer, d - buffer);
 }
 
 int main(int argc, char** argv) {
@@ -45,6 +47,6 @@ int main(int argc, char** argv) {
   if (argc > 3) {
     spi_device_path = argv[3];
   }
-  return opc_serve_main(spi_device_path, spi_speed_hz, port,
-                        apa102_put_pixels, buffer);
+  spi_fd = opc_open_spi(spi_device_path, spi_speed_hz);
+  return opc_serve_main(port, apa102_put_pixels, buffer);
 }
