@@ -74,7 +74,7 @@ appropriate for your LED chipset; pick one:
 to the appropriate breakout pins on the Beaglebone.  For `/dev/spidev1.0`,
 data is P9 pin 18 and clock is P9 pin 22.  For `/dev/spidev2.0`, data
 is P9 pin 30 and clock is P9 pin 31.  Ground is on P9 pin 1. See
-http://beagleboard.org/Support/bone101/#headers for a nice picture.
+http://beagleboard.org/Support/bone101/#headers-spi for a nice picture.
 
 **Step 5.** Connect the power wire of your LED strand _either_ to a
 separate 5V power source, _or_ to your Beaglebone's power on P9 pin 5;
