@@ -45,6 +45,7 @@ double camera_aspect = 1.0;  // will be updated to match window aspect ratio
 
 #define MAX_CHANNELS 10
 int channel_offsets[MAX_CHANNELS];
+int channel_num_pixels[MAX_CHANNELS];
 int num_channels= 0;
 
 // LED colours
@@ -246,7 +247,7 @@ void keyboard(unsigned char key, int x, int y) {
 }
 
 void handler(u8 channel, u16 count, pixel* p) {
-  int i = 0, j = 0;
+  int i = 0, j = 0, np = 0;
 
   if (verbose) {
     char* sep = " =";
@@ -265,14 +266,19 @@ void handler(u8 channel, u16 count, pixel* p) {
   if (channel > num_channels) {
     return;
   }
-  for (i = 0; i < count; i++) {
-    if (channel == 0) {
-      // Channel 0 is broadcast
-      for (j = 0; j < num_channels; j++) {
+  if (channel == 0) {
+    // Channel 0 is broadcast
+    for (j = 0; j < num_channels; j++) {
+      np = channel_num_pixels[j] < count ? channel_num_pixels[j] : count;
+      for (i = 0; i < np; i++) {
         pixels[i + channel_offsets[j]] = p[i];
       }
-    } else {
-      pixels[i + channel_offsets[channel-1]] = p[i];
+    }
+  } else {
+    j = channel-1;
+    np = channel_num_pixels[j] < count ? channel_num_pixels[j] : count;
+    for (i = 0; i < np; i++) {
+      pixels[i + channel_offsets[j]] = p[i];
     }
   }
 }
@@ -341,7 +347,6 @@ void load_layout(char* filename, int channel) {
   if (verbose) {
     printf("Channel %d offset is %d\n", channel, channel_offsets[channel]);
   }
-  fprintf(stderr, "Loaded \"%s\" as channel %d\n", filename, channel + 1);
 
   int shape_count = 0;
   for (item = json->child, i = 0; item; item = item->next, i++) {
@@ -378,6 +383,10 @@ void load_layout(char* filename, int channel) {
     }
   }
   num_pixels += shape_count;
+  channel_num_pixels[channel] = shape_count;
+
+  fprintf(stderr, "Loaded \"%s\" as channel %d (%d shapes)\n",
+          filename, channel + 1, shape_count);
   for (i = channel_offsets[channel]; i < shape_count; i++) {
     pixels[i].r = pixels[i].g = pixels[i].b = 1;
   }
