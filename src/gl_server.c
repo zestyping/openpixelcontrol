@@ -403,7 +403,7 @@ void init(char** filenames, int total_channels) {
 }
 
 void usage(char* prog_name) {
-  fprintf(stderr, "Usage: %s <options> -l <filename.json> [<port>]\n", prog_name);
+  fprintf(stderr, "Usage: %s -l <filename.json> [-p <port>]\n", prog_name);
   exit(1);
 }
 
