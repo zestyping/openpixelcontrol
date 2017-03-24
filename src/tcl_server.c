@@ -22,12 +22,17 @@ static int spi_fds[10];
 static int firsts[10];
 static int lasts[10];
 
+static u8 gamma_table_red[256];
+static u8 gamma_table_green[256];
+static u8 gamma_table_blue[256];
+
 void tcl_put_pixels(u8* dummy, u16 count, pixel* pixels) {
   int c;
   int i;
   pixel* p;
   u8* d;
   u8 flag;
+  u8 r, g, b;
 
   for (c = 0; c < num_spi_fds; c++) {
     d = buffers[c];
@@ -38,11 +43,14 @@ void tcl_put_pixels(u8* dummy, u16 count, pixel* pixels) {
     for (i = firsts[c], p = pixels + firsts[c];
          i < count && (lasts[c] < 0 || i <= lasts[c]);
          i++, p++) {
-      flag = (p->r & 0xc0) >> 6 | (p->g & 0xc0) >> 4 | (p->b & 0xc0) >> 2;
+      r = gamma_table_red[p->r];
+      g = gamma_table_green[p->g];
+      b = gamma_table_blue[p->b];
+      flag = (r & 0xc0) >> 6 | (g & 0xc0) >> 4 | (b & 0xc0) >> 2;
       *d++ = ~flag;
-      *d++ = p->b;
-      *d++ = p->g;
-      *d++ = p->r;
+      *d++ = b;
+      *d++ = g;
+      *d++ = r;
     }
     buffer_lens[c] = d - buffers[c];
   }
@@ -74,10 +82,21 @@ void parse_channel_spec(char* spec, char** device_path, int* first, int* last) {
   *last = parse_int(l, -1);
 }
 
+void set_gamma(double gamma_red, double gamma_green, double gamma_blue) {
+  int i;
+
+  for (i=0; i<256; i++) {
+    gamma_table_red[i] = (u8) (pow(i/255.0, gamma_red)*255.0 + 0.5);
+    gamma_table_green[i] = (u8) (pow(i/255.0, gamma_green)*255.0 + 0.5);
+    gamma_table_blue[i] = (u8) (pow(i/255.0, gamma_blue)*255.0 + 0.5);
+  }
+}
+
 int main(int argc, char** argv) {
   u16 port = OPC_DEFAULT_PORT;
   u32 spi_speed_hz = 8000000;
   int c;
+  double gamma;
 
   get_speed_and_port(&spi_speed_hz, &port, argc, argv);
   if (argc > 3) {
@@ -99,5 +118,10 @@ int main(int argc, char** argv) {
     firsts[0] = 0;
     lasts[0] = -1;
   }
+
+  gamma = atof(getenv("TCL_GAMMA"));
+  if (gamma <= 0) gamma = 1.0;
+  set_gamma(gamma, gamma, gamma);
+
   return opc_serve_main(port, tcl_put_pixels, NULL);
 }

@@ -24,7 +24,7 @@ bin/dummy_server: src/dummy_server.c src/opc_server.c
 
 bin/tcl_server: src/tcl_server.c src/opc_server.c src/spi.c src/cli.c
 	mkdir -p bin
-	gcc ${CFLAGS} -o $@ $^
+	gcc ${CFLAGS} -lm -o $@ $^
 
 bin/apa102_server: src/apa102_server.c src/opc_server.c src/spi.c src/cli.c
 	mkdir -p bin
