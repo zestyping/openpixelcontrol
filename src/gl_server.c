@@ -181,6 +181,7 @@ void display() {
   int i;
   shape* sh;
 
+  glClearColor(0.1, 0.1, 0.1, 1.0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   draw_axes();
   GLUquadric* quad = gluNewQuadric();
@@ -208,38 +209,6 @@ void reshape(int width, int height) {
   glViewport(0, 0, width, height);
   camera_aspect = ((double) width)/((double) height);
   update_camera();
-}
-
-void mouse(int button, int state, int x, int y) {
-  if (state == GLUT_DOWN && glutGetModifiers() & GLUT_ACTIVE_SHIFT) {
-    dollying = 1;
-    start_distance = camera_distance;
-    start_x = x;
-    start_y = y;
-  } else if (state == GLUT_DOWN) {
-    orbiting = 1;
-    start_angle = orbit_angle;
-    start_elevation = camera_elevation;
-    start_x = x;
-    start_y = y;
-  } else {
-    orbiting = 0;
-    dollying = 0;
-  }
-}
-
-void motion(int x, int y) {
-  if (orbiting) {
-    orbit_angle = start_angle + (x - start_x)*1.0;
-    double elevation = start_elevation + (y - start_y)*1.0;
-    camera_elevation = elevation < -89 ? -89 : elevation > 89 ? 89 : elevation;
-    update_camera();
-  }
-  if (dollying) {
-    double distance = start_distance + (y - start_y)*0.1;
-    camera_distance = distance < 1.0 ? 1.0 : distance;
-    update_camera();
-  }
 }
 
 void keyboard(unsigned char key, int x, int y) {
@@ -283,7 +252,7 @@ void handler(u8 channel, u16 count, pixel* p) {
   }
 }
 
-void idle() {
+void receive_frames() {
   /*
    * Receive all pending frames. We'll often draw slower than an OPC source
    * is producing pixels; to avoid runaway lag due to data buffered in the socket,
@@ -302,6 +271,44 @@ void idle() {
     // Show the last received frame
     display();
   }
+}
+
+void idle() {
+  receive_frames();
+}
+
+void mouse(int button, int state, int x, int y) {
+  if (state == GLUT_DOWN && glutGetModifiers() & GLUT_ACTIVE_SHIFT) {
+    dollying = 1;
+    start_distance = camera_distance;
+    start_x = x;
+    start_y = y;
+  } else if (state == GLUT_DOWN) {
+    orbiting = 1;
+    start_angle = orbit_angle;
+    start_elevation = camera_elevation;
+    start_x = x;
+    start_y = y;
+  } else {
+    orbiting = 0;
+    dollying = 0;
+  }
+  receive_frames();
+}
+
+void motion(int x, int y) {
+  if (orbiting) {
+    orbit_angle = start_angle + (x - start_x)*1.0;
+    double elevation = start_elevation + (y - start_y)*1.0;
+    camera_elevation = elevation < -89 ? -89 : elevation > 89 ? 89 : elevation;
+    update_camera();
+  }
+  if (dollying) {
+    double distance = start_distance + (y - start_y)*0.1;
+    camera_distance = distance < 1.0 ? 1.0 : distance;
+    update_camera();
+  }
+  receive_frames();
 }
 
 char* read_file(char* filename) {
@@ -398,7 +405,7 @@ void init(char** filenames, int total_channels) {
     load_layout(filenames[channel], channel);
   }
   for (i = 0; i < 256; i++) {
-    xfer[i].r = xfer[i].g = xfer[i].b = 0.1 + i*0.9/256;
+    xfer[i].r = xfer[i].g = xfer[i].b = i/255.0;
   }
 }
 
