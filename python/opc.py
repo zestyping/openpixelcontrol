@@ -33,7 +33,7 @@ Recommended use:
 
 """
 
-import socket
+import socket, struct
 
 class Client(object):
 
@@ -145,15 +145,13 @@ class Client(object):
             return False
 
         # build OPC message
-        len_hi_byte = int(len(pixels)*3 / 256)
-        len_lo_byte = (len(pixels)*3) % 256
-        header = chr(channel) + chr(0) + chr(len_hi_byte) + chr(len_lo_byte)
+        header = struct.pack("!BBH",channel,0,len(pixels)*3)
         pieces = [header]
         for r, g, b in pixels:
             r = min(255, max(0, int(r)))
             g = min(255, max(0, int(g)))
             b = min(255, max(0, int(b)))
-            pieces.append(chr(r) + chr(g) + chr(b))
+            pieces.append(struct.pack("!BBB",r,g,b))
         if bytes is str:
             message = ''.join(pieces)
         else:
