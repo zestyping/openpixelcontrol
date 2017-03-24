@@ -36,7 +36,6 @@ Recommended use:
 import socket, struct
 
 class Client(object):
-
     def __init__(self, server_ip_port, long_connection=True, verbose=False):
         """Create an OPC client object which sends pixels to an OPC server.
 
@@ -145,13 +144,13 @@ class Client(object):
             return False
 
         # build OPC message
-        header = struct.pack("!BBH",channel,0,len(pixels)*3)
+        header = struct.pack('>BBH', channel, 0, len(pixels)*3)
         pieces = [header]
         for r, g, b in pixels:
             r = min(255, max(0, int(r)))
             g = min(255, max(0, int(g)))
             b = min(255, max(0, int(b)))
-            pieces.append(struct.pack("!BBB",r,g,b))
+            pieces.append(struct.pack('>BBB', r, g, b))
         if bytes is str:
             message = ''.join(pieces)
         else:
