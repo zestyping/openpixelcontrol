@@ -403,7 +403,7 @@ void init(char** filenames, int total_channels) {
 }
 
 void usage(char* prog_name) {
-  fprintf(stderr, "Usage: %s <options> -l <filename.json> [<port>]\n", prog_name);
+  fprintf(stderr, "Usage: %s -l <filename.json> [-p <port>]\n", prog_name);
   exit(1);
 }
 
@@ -418,7 +418,7 @@ int main(int argc, char** argv) {
   int opt;
   char* layouts[MAX_CHANNELS];
 
-  while ((opt = getopt(argc, argv, ":l:p:")) != -1)
+  while ((opt = getopt(argc, argv, ":hl:p:")) != -1)
   {
       switch (opt)
       {
@@ -433,11 +433,23 @@ int main(int argc, char** argv) {
       case 'p':
           port = strtol(optarg, NULL, 10);
           break;
+      case ':':
+          fprintf(stderr, "Missing argument to option: '%c'\n", optopt);
+          usage(argv[0]);
+      case '?':
+          fprintf(stderr, "Option not recognized: '%c'\n", optopt);
+          usage(argv[0]);
+      case 'h':
       default:
           usage(argv[0]);
       }
   }
+  if (optind < argc) {
+      fprintf(stderr, "Argument is not a valid option: %s\n", argv[optind]);
+      usage(argv[0]);
+  }
   if (num_channels == 0) {
+      fprintf(stderr, "At least one layout file name is required\n");
       usage(argv[0]);
   }
   init(layouts, num_channels);
