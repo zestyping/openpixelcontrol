@@ -125,6 +125,8 @@ u8 opc_receive(opc_source source, opc_handler* handler, u32 timeout_ms) {
                       4 - info->header_length, 0);
       if (received > 0) {
         info->header_length += received;
+      } else if (received == 0) {  // connection was closed
+        received = -1;
       }
     }
     if (info->header_length == 4) {  /* header complete */
@@ -134,6 +136,8 @@ u8 opc_receive(opc_source source, opc_handler* handler, u32 timeout_ms) {
                         payload_expected - info->payload_length, 0);
         if (received > 0) {
           info->payload_length += received;
+        } else if (received == 0) {  // connection was closed
+          received = -1;
         }
       }
       if (info->header_length == 4 &&
@@ -146,7 +150,7 @@ u8 opc_receive(opc_source source, opc_handler* handler, u32 timeout_ms) {
         info->payload_length = 0;
       }
     }
-    if (received <= 0) {
+    if (received < 0) {
       /* Connection was closed; wait for more connections. */
       fprintf(stderr, "OPC: Client closed connection\n");
       close(info->sock);
