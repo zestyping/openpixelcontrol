@@ -15,25 +15,30 @@ Recommended use:
 
     # Test if it can connect (optional)
     if client.can_connect():
-        print 'connected to %s' % ADDRESS
+        print('connected to %s' % ADDRESS)
     else:
         # We could exit here, but instead let's just print a warning
         # and then keep trying to send pixels in case the server
         # appears later
-        print 'WARNING: could not connect to %s' % ADDRESS
+        print('WARNING: could not connect to %s' % ADDRESS)
 
     # Send pixels forever at 30 frames per second
     while True:
         my_pixels = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
         if client.put_pixels(my_pixels, channel=0):
-            print '...'
+            print('...')
         else:
-            print 'not connected'
+            print('not connected')
         time.sleep(1/30.0)
 
 """
 
-import socket, struct
+import socket
+import struct
+import sys
+
+SET_PIXEL_COLOURS = 0  # "Set pixel colours" command (see openpixelcontrol.org)
+
 
 class Client(object):
     def __init__(self, server_ip_port, long_connection=True, verbose=False):
@@ -144,17 +149,18 @@ class Client(object):
             return False
 
         # build OPC message
-        header = struct.pack('>BBH', channel, 0, len(pixels)*3)
-        pieces = [header]
-        for r, g, b in pixels:
-            r = min(255, max(0, int(r)))
-            g = min(255, max(0, int(g)))
-            b = min(255, max(0, int(b)))
-            pieces.append(struct.pack('>BBB', r, g, b))
+        command = SET_PIXEL_COLOURS
+        header = struct.pack('>BBH', channel, SET_PIXEL_COLOURS, len(pixels)*3)
+        pieces = [struct.pack(
+                      'BBB',
+                      min(255, max(0, int(r))),
+                      min(255, max(0, int(g))),
+                      min(255, max(0, int(b)))
+                  ) for r, g, b in pixels]
         if bytes is str:
-            message = ''.join(pieces)
+            message = header + ''.join(pieces)
         else:
-            message = bytes(map(ord, ''.join(pieces)))
+            message = header + b''.join(pieces)
 
         self._debug('put_pixels: sending pixels to server')
         try:
@@ -169,5 +175,3 @@ class Client(object):
             self.disconnect()
 
         return True
-
-
