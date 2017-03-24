@@ -88,7 +88,7 @@ u8 opc_receive(opc_source source, opc_handler* handler, u32 timeout_ms) {
   struct sockaddr_in address;
   socklen_t address_len = sizeof(address);
   u16 payload_expected;
-  ssize_t received = 0;
+  ssize_t received = 1;  /* nonzero, because we treat zero to mean "closed" */
   char buffer[64];
 
   if (source < 0 || source >= opc_next_source) {
@@ -126,7 +126,8 @@ u8 opc_receive(opc_source source, opc_handler* handler, u32 timeout_ms) {
       if (received > 0) {
         info->header_length += received;
       }
-    } else {
+    }
+    if (info->header_length == 4) {  /* header complete */
       payload_expected = (info->header[2] << 8) | info->header[3];
       if (info->payload_length < payload_expected) {  /* need payload */
         received = recv(info->sock, info->payload + info->payload_length,
