@@ -19,6 +19,7 @@ specific language governing permissions and limitations under the License. */
 #include <OpenGL/CGLCurrent.h>
 #include <OpenGL/CGLTypes.h>
 #include <OpenGL/OpenGL.h>
+#include <OpenGL/gl.h>
 #include <GLUT/glut.h>
 #else
 #include <GL/glut.h>
@@ -132,6 +133,15 @@ void draw_point(shape* this, GLUquadric* quad) {
   glPushMatrix();
   glTranslatef(this->g.point.x, this->g.point.y, this->g.point.z);
   gluSphere(quad, SHAPE_THICKNESS/2, 6, 3);
+  glPopMatrix();
+}
+
+void draw_square(shape* this, GLUquadric* quad) {
+  pixel p = pixels[this->index];
+  glColor3d(xfer[p.r].r, xfer[p.g].g, xfer[p.b].b);
+  glPushMatrix();
+  glTranslatef(this->g.point.x, this->g.point.y, this->g.point.z);
+  glRectf(-0.2,-0.2,0.2,0.2);
   glPopMatrix();
 }
 
@@ -338,7 +348,7 @@ void load_layout(char* filename, int channel) {
   cJSON* start;
   cJSON* x2;
   int i = 0;
-  
+
   buffer = read_file(filename);
   if (buffer == NULL) {
 	  fprintf(stderr, "Unable to open '%s'\n", filename);
@@ -364,7 +374,7 @@ void load_layout(char* filename, int channel) {
     point = cJSON_GetObjectItem(item, "point");
     x = point ? point->child : NULL;
     if (x && x->next && x->next->next) {
-      shapes[num_shapes].draw = draw_point;
+      shapes[num_shapes].draw = draw_square;
       shapes[num_shapes].index = channel_offsets[channel] + i;
       shapes[num_shapes].g.point.x = x->valuedouble;
       shapes[num_shapes].g.point.y = x->next->valuedouble;
