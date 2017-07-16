@@ -138,9 +138,13 @@ u8 opc_receive(opc_source source, opc_handler* handler, u32 timeout_ms) {
       }
       if (info->header_length == 4 &&
           info->payload_length == payload_expected) {  /* payload complete */
-        if (info->header[1] == OPC_SET_PIXELS) {
-          handler(info->header[0], payload_expected/3,
-                  (pixel*) info->payload);
+        switch (info->header[1]) {
+          case OPC_SET_PIXELS:
+            handler(info->header[0], payload_expected/3,
+                    (pixel*) info->payload);
+            break;
+          case OPC_STREAM_SYNC:
+            break;
         }
         info->header_length = 0;
         info->payload_length = 0;

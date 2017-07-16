@@ -27,11 +27,31 @@ specific language governing permissions and limitations under the License. */
 /* Wait at most 0.5 second for a connection or a write. */
 #define OPC_SEND_TIMEOUT_MS 1000
 
-/* Internal structure for a sink.  sock >= 0 iff the connection is open. */
+#define OPC_SINK_TYPE_SOCKET 0
+#define OPC_SINK_TYPE_FILE 1
+
+#define OPC_MAX_PATH 1024
+
+/* Internal structure for a socket sink.  sock >= 0 iff connected. */
 typedef struct {
   struct sockaddr_in address;
   int sock;
   char address_string[64];
+} opc_sink_socket;
+
+/* Internal structure for a file sink.  fd >= 0 iff connected. */
+typedef struct {
+  int fd;
+  char path[OPC_MAX_PATH + 1];
+} opc_sink_file;
+
+/* Internal structure for a sink. */
+typedef struct {
+  u8 type;
+  union {
+    opc_sink_socket socket;
+    opc_sink_file file;
+  } u;
 } opc_sink_info;
 
 static opc_sink_info opc_sinks[OPC_MAX_SINKS];
@@ -63,8 +83,9 @@ int opc_resolve(char* s, struct sockaddr_in* address, u16 default_port) {
   return 0;
 }
 
-opc_sink opc_new_sink(char* hostport) {
+opc_sink opc_new_sink_socket(char* hostport) {
   opc_sink_info* info;
+  opc_sink_socket* ss;
 
   /* Allocate an opc_sink_info entry. */
   if (opc_next_sink >= OPC_MAX_SINKS) {
@@ -72,45 +93,70 @@ opc_sink opc_new_sink(char* hostport) {
     return -1;
   }
   info = &opc_sinks[opc_next_sink];
+  info->type = OPC_SINK_TYPE_SOCKET;
+  ss = &(info->u.socket);
+  ss->sock = -1;
 
   /* Resolve the server address. */
-  info->sock = -1;
-  if (!opc_resolve(hostport, &(info->address), OPC_DEFAULT_PORT)) {
+  if (!opc_resolve(hostport, &(ss->address), OPC_DEFAULT_PORT)) {
     fprintf(stderr, "OPC: Host not found: %s\n", hostport);
     return -1;
   }
-  inet_ntop(AF_INET, &(info->address.sin_addr), info->address_string, 64);
-  sprintf(info->address_string + strlen(info->address_string),
-          ":%d", ntohs(info->address.sin_port));
+  inet_ntop(AF_INET, &(ss->address.sin_addr), ss->address_string, 64);
+  sprintf(ss->address_string + strlen(ss->address_string),
+          ":%d", ntohs(ss->address.sin_port));
 
   /* Increment opc_next_sink only if we were successful. */
   return opc_next_sink++;
 }
 
-/* Makes one attempt to open the connection for a sink if needed, timing out */
-/* after timeout_ms.  Returns 1 if connected, 0 if the timeout expired. */
-static u8 opc_connect(opc_sink sink, u32 timeout_ms) {
+opc_sink opc_new_sink_file(char* path) {
+  opc_sink_info* info;
+  opc_sink_file* sf;
+
+  if (strlen(path) > OPC_MAX_PATH) {
+    fprintf(stderr, "OPC: Path is too long (max %d chars)\n", OPC_MAX_PATH);
+    return -1;
+  }
+
+  /* Allocate an opc_sink_info entry. */
+  if (opc_next_sink >= OPC_MAX_SINKS) {
+    fprintf(stderr, "OPC: No more sinks available\n");
+    return -1;
+  }
+  info = &opc_sinks[opc_next_sink];
+  info->type = OPC_SINK_TYPE_FILE;
+  sf = &(info->u.file);
+  sf->fd = -1;
+  strcpy(sf->path, path);
+
+  /* Increment opc_next_sink only if we were successful. */
+  return opc_next_sink++;
+}
+
+/* Backward compatibility. */
+opc_sink opc_new_sink(char* hostport) {
+  return opc_new_sink_socket(hostport);
+}
+
+/* Makes one attempt to connect a socket sink, returning 1 on success. */
+static u8 opc_connect_socket(opc_sink_socket* ss, u32 timeout_ms) {
   int sock;
   struct timeval timeout;
-  opc_sink_info* info = &opc_sinks[sink];
   fd_set writefds;
   int opt_errno;
   socklen_t len;
 
-  if (sink < 0 || sink >= opc_next_sink) {
-    fprintf(stderr, "OPC: Sink %d does not exist\n", sink);
-    return 0;
-  }
-  if (info->sock >= 0) {  /* already connected */
+  if (ss->sock >= 0) {  /* already connected */
     return 1;
   }
 
   /* Do a non-blocking connect so we can control the timeout. */
   sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
   fcntl(sock, F_SETFL, O_NONBLOCK);
-  if (connect(sock, (struct sockaddr*) &(info->address),
-              sizeof(info->address)) < 0 && errno != EINPROGRESS) {
-    fprintf(stderr, "OPC: Failed to connect to %s: ", info->address_string);
+  if (connect(sock, (struct sockaddr*) &(ss->address),
+              sizeof(ss->address)) < 0 && errno != EINPROGRESS) {
+    fprintf(stderr, "OPC: Failed to connect to %s: ", ss->address_string);
     perror(NULL);
     close(sock);
     return 0;
@@ -126,12 +172,12 @@ static u8 opc_connect(opc_sink sink, u32 timeout_ms) {
     opt_errno = 0;
     getsockopt(sock, SOL_SOCKET, SO_ERROR, &opt_errno, &len);
     if (opt_errno == 0) {
-      fprintf(stderr, "OPC: Connected to %s\n", info->address_string);
-      info->sock = sock;
+      fprintf(stderr, "OPC: Connected to %s\n", ss->address_string);
+      ss->sock = sock;
       return 1;
     } else {
       fprintf(stderr, "OPC: Failed to connect to %s: %s\n",
-              info->address_string, strerror(opt_errno));
+              ss->address_string, strerror(opt_errno));
       close(sock);
       if (opt_errno == ECONNREFUSED) {
         usleep(timeout_ms*1000);
@@ -140,8 +186,22 @@ static u8 opc_connect(opc_sink sink, u32 timeout_ms) {
     }
   }
   fprintf(stderr, "OPC: No connection to %s after %d ms\n",
-          info->address_string, timeout_ms);
+          ss->address_string, timeout_ms);
   return 0;
+}
+
+/* Makes one attempt to open a file sink, returning 1 on success. */
+static u8 opc_open_file(opc_sink_file* sf) {
+  int fd;
+
+  /* Open the file */
+  fd = open(sf->path, O_CREAT | O_WRONLY | O_APPEND, 0644);
+  if (fd < 0) {
+    fprintf(stderr, "OPC: %s: %s", sf->path, strerror(errno));
+    return 0;
+  }
+  sf->fd = fd;
+  return 1;
 }
 
 /* Closes the connection for a sink. */
@@ -152,11 +212,90 @@ static void opc_close(opc_sink sink) {
     fprintf(stderr, "OPC: Sink %d does not exist\n", sink);
     return;
   }
-  if (info->sock >= 0) {
-    close(info->sock);
-    info->sock = -1;
-    fprintf(stderr, "OPC: Closed connection to %s\n", info->address_string);
+  switch (info->type) {
+    case OPC_SINK_TYPE_SOCKET:
+      if (info->u.socket.sock >= 0) {
+        close(info->u.socket.sock);
+        info->u.socket.sock = -1;
+        fprintf(stderr, "OPC: Closed connection to %s\n",
+                info->u.socket.address_string);
+      }
+      break;
+    case OPC_SINK_TYPE_FILE:
+      if (info->u.file.fd >= 0) {
+        close(info->u.file.fd);
+        info->u.file.fd = -1;
+        fprintf(stderr, "OPC: Closed %s\n", info->u.file.path);
+      }
+      break;
+    default:
+      fprintf(stderr, "OPC: Unknown sink type %d\n", info->type);
   }
+}
+
+/* Makes one attempt to open the connection for a sink if needed, timing out */
+/* after timeout_ms.  Returns 1 if connected, 0 if the timeout expired. */
+static u8 opc_connect(opc_sink sink, u32 timeout_ms) {
+  opc_sink_info* info = &opc_sinks[sink];
+
+  if (sink < 0 || sink >= opc_next_sink) {
+    fprintf(stderr, "OPC: Sink %d does not exist\n", sink);
+    return 0;
+  }
+  switch (info->type) {
+    case OPC_SINK_TYPE_SOCKET:
+      return opc_connect_socket(&(info->u.socket), timeout_ms);
+    case OPC_SINK_TYPE_FILE:
+      return opc_open_file(&(info->u.file));
+    default:
+      fprintf(stderr, "OPC: Unknown sink type %d\n", info->type);
+      return 0;
+  }
+}
+
+/* Sends data to a socket sink, making at most one attempt to open the */
+/* connection if needed and waiting at most timeout_ms for each I/O */
+/* operation.  Returns 1 if all the data was sent, 0 otherwise. */
+static u8 opc_send_socket(
+    opc_sink_socket* ss, const u8* data, ssize_t len, u32 timeout_ms) {
+  struct timeval timeout;
+  ssize_t total_sent = 0;
+  ssize_t sent;
+  sig_t pipe_sig;
+
+  timeout.tv_sec = timeout_ms/1000;
+  timeout.tv_usec = timeout_ms % 1000;
+  setsockopt(ss->sock, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+  while (total_sent < len) {
+    pipe_sig = signal(SIGPIPE, SIG_IGN);
+    sent = send(ss->sock, data + total_sent, len - total_sent, 0);
+    signal(SIGPIPE, pipe_sig);
+    if (sent <= 0) {
+      perror("OPC: Error sending data");
+      return 0;
+    }
+    total_sent += sent;
+  }
+  return 1;
+}
+
+/* Writes data to a file sink, returning 1 if all the data was written. */
+static u8 opc_write_file(opc_sink_file* sf, const u8* data, ssize_t len) {
+  ssize_t total_sent = 0;
+  ssize_t sent;
+  sig_t pipe_sig;
+
+  while (total_sent < len) {
+    pipe_sig = signal(SIGPIPE, SIG_IGN);
+    sent = write(sf->fd, data + total_sent, len - total_sent);
+    signal(SIGPIPE, pipe_sig);
+    if (sent <= 0) {
+      perror("OPC: Error writing data");
+      return 0;
+    }
+    total_sent += sent;
+  }
+  return 1;
 }
 
 /* Sends data to a sink, making at most one attempt to open the connection */
@@ -164,10 +303,7 @@ static void opc_close(opc_sink sink) {
 /* 1 if all the data was sent, 0 otherwise. */
 static u8 opc_send(opc_sink sink, const u8* data, ssize_t len, u32 timeout_ms) {
   opc_sink_info* info = &opc_sinks[sink];
-  struct timeval timeout;
-  ssize_t total_sent = 0;
-  ssize_t sent;
-  sig_t pipe_sig;
+  int result = 0;
 
   if (sink < 0 || sink >= opc_next_sink) {
     fprintf(stderr, "OPC: Sink %d does not exist\n", sink);
@@ -176,25 +312,33 @@ static u8 opc_send(opc_sink sink, const u8* data, ssize_t len, u32 timeout_ms) {
   if (!opc_connect(sink, timeout_ms)) {
     return 0;
   }
-  timeout.tv_sec = timeout_ms/1000;
-  timeout.tv_usec = timeout_ms % 1000;
-  setsockopt(info->sock, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
-  while (total_sent < len) {
-    pipe_sig = signal(SIGPIPE, SIG_IGN);
-    sent = send(info->sock, data + total_sent, len - total_sent, 0);
-    signal(SIGPIPE, pipe_sig);
-    if (sent <= 0) {
-      perror("OPC: Error sending data");
-      opc_close(sink);
+  switch (info->type) {
+    case OPC_SINK_TYPE_SOCKET:
+      result = opc_send_socket(&(info->u.socket), data, len, timeout_ms);
+      break;
+    case OPC_SINK_TYPE_FILE:
+      result = opc_write_file(&(info->u.file), data, len);
+      break;
+    default:
+      fprintf(stderr, "OPC: Unknown sink type %d\n", info->type);
       return 0;
-    }
-    total_sent += sent;
   }
-  return 1;
+
+  if (result == 0) opc_close(sink);
+  return result;
+}
+
+u8 opc_send_header(opc_sink sink, u8 channel, u8 command, u16 len) {
+  u8 header[4];
+
+  header[0] = channel;
+  header[1] = command;
+  header[2] = len >> 8;
+  header[3] = len & 0xff;
+  return opc_send(sink, header, 4, OPC_SEND_TIMEOUT_MS);
 }
 
 u8 opc_put_pixels(opc_sink sink, u8 channel, u16 count, pixel* pixels) {
-  u8 header[4];
   ssize_t len;
 
   if (count > 0xffff / 3) {
@@ -203,10 +347,14 @@ u8 opc_put_pixels(opc_sink sink, u8 channel, u16 count, pixel* pixels) {
   }
   len = count * 3;
 
-  header[0] = channel;
-  header[1] = OPC_SET_PIXELS;
-  header[2] = len >> 8;
-  header[3] = len & 0xff;
-  return opc_send(sink, header, 4, OPC_SEND_TIMEOUT_MS) &&
+  return opc_send_header(sink, channel, OPC_SET_PIXELS, len) &&
       opc_send(sink, (u8*) pixels, len, OPC_SEND_TIMEOUT_MS);
+}
+
+u8 opc_stream_sync(opc_sink sink) {
+  ssize_t len = OPC_STREAM_SYNC_LENGTH;
+  u8* data = OPC_STREAM_SYNC_DATA;
+
+  return opc_send_header(sink, 0, OPC_STREAM_SYNC, len) &&
+      opc_send(sink, data, len, OPC_SEND_TIMEOUT_MS);
 }
