@@ -22,6 +22,8 @@ specific language governing permissions and limitations under the License. */
 
 /* OPC command codes */
 #define OPC_SET_PIXELS 0
+#define OPC_FRAME_START 0xf0
+#define OPC_FRAME_END 0xf1
 #define OPC_STREAM_SYNC 0xff
 
 #define OPC_STREAM_SYNC_LENGTH 4
@@ -52,15 +54,21 @@ opc_sink opc_new_sink_file(char* path);
 /* Calls opc_new_sink_socket.  Present for backward compatibility. */
 opc_sink opc_new_sink(char* hostport);
 
-/* Sends RGB data for 'count' pixels to channel 'channel'.  Makes one attempt */
-/* to connect the sink if needed; if the connection could not be opened, the */
-/* the data is not sent.  Returns 1 if the data was sent, 0 otherwise. */
+/* All of the following packet-sending functions make one attempt to connect */
+/* the sink if needed; if the connection could not be opened, the packet is */
+/* not sent.  These functions return 1 if the packet was sent, 0 otherwise. */
+
+/* Sends RGB data for 'count' pixels to channel 'channel'. */
 u8 opc_put_pixels(opc_sink sink, u8 channel, u16 count, pixel* pixels);
 
-/* Sends a stream sync packet to channel 'channel'.  Makes one attempt */
-/* to connect the sink if needed; if the connection could not be opened, the */
-/* the packet is not sent.  Returns 1 if the packet was sent, 0 otherwise. */
-u8 opc_stream_sync(opc_sink sink, u8 channel);
+/* Broadcasts a frame start packet to all channels. */
+u8 opc_frame_start(opc_sink sink);
+
+/* Broadcasts a frame end packet to all channels. */
+u8 opc_frame_end(opc_sink sink);
+
+/* Broadcasts a stream sync packet to all channels. */
+u8 opc_stream_sync(opc_sink sink);
 
 // OPC server functions ----------------------------------------------------
 

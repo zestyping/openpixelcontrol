@@ -143,6 +143,10 @@ u8 opc_receive(opc_source source, opc_handler* handler, u32 timeout_ms) {
             handler(info->header[0], payload_expected/3,
                     (pixel*) info->payload);
             break;
+          case OPC_FRAME_START:
+            break;
+          case OPC_FRAME_END:
+            break;
           case OPC_STREAM_SYNC:
             break;
         }

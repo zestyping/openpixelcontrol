@@ -351,10 +351,18 @@ u8 opc_put_pixels(opc_sink sink, u8 channel, u16 count, pixel* pixels) {
       opc_send(sink, (u8*) pixels, len, OPC_SEND_TIMEOUT_MS);
 }
 
-u8 opc_stream_sync(opc_sink sink, u8 channel) {
+u8 opc_frame_start(opc_sink sink) {
+  return opc_send_header(sink, 0, OPC_FRAME_START, 0);
+}
+
+u8 opc_frame_end(opc_sink sink) {
+  return opc_send_header(sink, 0, OPC_FRAME_END, 0);
+}
+
+u8 opc_stream_sync(opc_sink sink) {
   ssize_t len = OPC_STREAM_SYNC_LENGTH;
   u8* data = OPC_STREAM_SYNC_DATA;
 
-  return opc_send_header(sink, channel, OPC_STREAM_SYNC, len) &&
+  return opc_send_header(sink, 0, OPC_STREAM_SYNC, len) &&
       opc_send(sink, data, len, OPC_SEND_TIMEOUT_MS);
 }
