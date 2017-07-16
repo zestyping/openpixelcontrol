@@ -22,6 +22,10 @@ specific language governing permissions and limitations under the License. */
 
 /* OPC command codes */
 #define OPC_SET_PIXELS 0
+#define OPC_STREAM_SYNC 0xff
+
+#define OPC_STREAM_SYNC_LENGTH 4
+#define OPC_STREAM_SYNC_DATA ((u8*) "\xf0\xca\x71\x2e")
 
 /* Maximum number of OPC sinks or sources allowed */
 #define OPC_MAX_SINKS 64
@@ -37,13 +41,26 @@ typedef s8 opc_sink;
 
 /* Creates a new OPC sink.  hostport should be in "host" or "host:port" form. */
 /* No TCP connection is attempted yet; the connection will be automatically */
-/* opened as necessary by opc_put_pixels, and reopened if it closes. */
+/* opened as needed for sending, and reopened if it closes. */
+opc_sink opc_new_sink_socket(char* hostport);
+
+/* Creates a new OPC sink.  path should be the path to a writeable file. */
+/* The file is not opened yet; the connection will be automatically opened */
+/* as needed for sending, and reopened if it closes. */
+opc_sink opc_new_sink_file(char* path);
+
+/* Calls opc_new_sink_socket.  Present for backward compatibility. */
 opc_sink opc_new_sink(char* hostport);
 
 /* Sends RGB data for 'count' pixels to channel 'channel'.  Makes one attempt */
 /* to connect the sink if needed; if the connection could not be opened, the */
 /* the data is not sent.  Returns 1 if the data was sent, 0 otherwise. */
 u8 opc_put_pixels(opc_sink sink, u8 channel, u16 count, pixel* pixels);
+
+/* Sends a stream sync packet to channel 'channel'.  Makes one attempt */
+/* to connect the sink if needed; if the connection could not be opened, the */
+/* the packet is not sent.  Returns 1 if the packet was sent, 0 otherwise. */
+u8 opc_stream_sync(opc_sink sink, u8 channel);
 
 // OPC server functions ----------------------------------------------------
 
