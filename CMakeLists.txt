@@ -163,13 +163,14 @@ if (LINUX)
         list(APPEND SERVER_LIST "lpd8806_server")
     endif()
 
-    macro(create_server )
-
     foreach (SERVER ${SERVER_LIST})
-        set(SRCS ${SERVER}.c ${SERVER_COMMON_SRCS})
+        set(SRCS
+            "${PROJECT_SOURCE_DIR}/src/${SERVER}.c"
+            ${SERVER_COMMON_SRCS})
+
         source_group("Sources" FILES ${SRCS})
 
         add_executable(${SERVER} ${SRCS} ${HDRS})
-        target_link_libraries(${GLUT_LIBRARIES} m)
+        target_link_libraries(${SERVER} m)
     endforeach()
 endif()
