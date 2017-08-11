@@ -22,18 +22,33 @@ int main(int argc, char** argv) {
   char buffer[MAX_INPUT_LENGTH];
   char* token;
   pixel pixels[MAX_PIXELS];
-  int c, chars;
+  int c, chars = 0;
   u32 hex;
   u16 count;
-  u16 port;
   opc_sink s;
   int i;
   char* sep;
+  int ret = 0;
 
   if (argc < 2) {
     fprintf(stderr, "Usage: %s <server>[:<port>]\n", argv[0]);
     return 1;
   }
+
+#ifdef _WIN32
+  // Init winsock
+  {
+	  WORD wVersionRequested;
+	  WSADATA wsaData;
+	  int err;
+	  wVersionRequested = MAKEWORD(2, 2);
+	  err = WSAStartup(wVersionRequested, &wsaData);
+	  if (err != 0) {
+		  printf("WSAStartup failed with error: %d\n", err);
+		  ret = -1; goto fail;
+	  }
+  }
+#endif
 
   s = opc_new_sink(argv[1]);
   buffer[0] = 0;
@@ -45,7 +60,7 @@ int main(int argc, char** argv) {
     count = 0;
     token = strtok(buffer + c, " \t\r\n");
     while (token) {
-      c += chars;
+      c += chars; // TODO: Fix bug, chars is never initialized or used anywhere else?
       if (strlen(token) == 3) {
         hex = strtol(token, NULL, 16);
         pixels[count].r = ((hex & 0xf00) >> 8) * 0x11;
@@ -75,4 +90,9 @@ int main(int argc, char** argv) {
     opc_put_pixels(s, channel, count, pixels);
     buffer[0] = 0;
   }
+fail:
+#ifdef _WIN32
+  WSACleanup();
+#endif
+  return ret;
 }
