@@ -13,6 +13,12 @@ specific language governing permissions and limitations under the License. */
 #include <string.h>
 #include <stdlib.h>
 #include "opc.h"
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN 1
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <windows.h>
+#endif // _WIN32
 
 #define MAX_PIXELS (65535/3)
 #define MAX_INPUT_LENGTH (MAX_PIXELS*8)
