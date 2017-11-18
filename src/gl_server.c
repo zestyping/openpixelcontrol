@@ -338,7 +338,7 @@ void load_layout(char* filename, int channel) {
   cJSON* start;
   cJSON* x2;
   int i = 0;
-  
+
   buffer = read_file(filename);
   if (buffer == NULL) {
 	  fprintf(stderr, "Unable to open '%s'\n", filename);
@@ -425,7 +425,7 @@ int main(int argc, char** argv) {
   int opt;
   char* layouts[MAX_CHANNELS];
 
-  while ((opt = getopt(argc, argv, ":hl:p:")) != -1)
+  while ((opt = getopt(argc, argv, ":hl:p:t:")) != -1)
   {
       switch (opt)
       {
@@ -439,6 +439,15 @@ int main(int argc, char** argv) {
           break;
       case 'p':
           port = strtol(optarg, NULL, 10);
+          break;
+      case 't':
+          if ( (strcmp(optarg, "UDP") == 0) || (strcmp(optarg, "TCP") == 0) ){
+            strcpy(transport, optarg);
+          }
+          else {
+            fprintf(stderr, "Transport can be UDP or TCP\n");
+            exit(1);
+          }
           break;
       case ':':
           fprintf(stderr, "Missing argument to option: '%c'\n", optopt);

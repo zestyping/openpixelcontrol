@@ -30,6 +30,9 @@ specific language governing permissions and limitations under the License. */
 /* Maximum number of pixels in one message */
 #define OPC_MAX_PIXELS_PER_MESSAGE ((1 << 16) / 3)
 
+// OPC global vars for options
+char transport[32]; // either "UDP" or "TCP"
+
 // OPC client functions ----------------------------------------------------
 
 /* Handle for an OPC sink created by opc_new_sink. */

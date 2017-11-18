@@ -39,18 +39,34 @@ int opc_listen(u16 port) {
   int sock;
   int one = 1;
 
-  sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+  // use TCP
+  if ( strcmp(transport, "TCP") == 0 ){
+    fprintf(stderr, "Using transport: %s\n", transport);
+    sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+  }
+  // use UDP
+  else if ( strcmp(transport, "UDP") == 0 ){
+    fprintf(stderr, "Using transport: %s\n", transport);
+    sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+  }
+  else {
+    fprintf(stderr, "Using transport: TCP\n", transport);
+    sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+    strcpy(transport, "TCP");
+  }
+
   setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
 
   address.sin_family = AF_INET;
   address.sin_port = htons(port);
-  bzero(&address.sin_addr, sizeof(address.sin_addr));
+  // bzero(&address.sin_addr, sizeof(address.sin_addr)); // zeros.. fill address later?
+  address.sin_addr.s_addr = inet_addr("127.0.0.1"); // for now just set explicitly
   if (bind(sock, (struct sockaddr*) &address, sizeof(address)) != 0) {
     fprintf(stderr, "OPC: Could not bind to port %d: ", port);
     perror(NULL);
     return -1;
   }
-  if (listen(sock, 0) != 0) {
+  if (listen(sock, 0) != 0 && (strcmp(transport, "TCP") == 0) ) { // only relevant for TCP
     fprintf(stderr, "OPC: Could not listen on port %d: ", port);
     perror(NULL);
     return -1;
