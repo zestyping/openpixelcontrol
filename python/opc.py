@@ -41,7 +41,7 @@ SET_PIXEL_COLOURS = 0  # "Set pixel colours" command (see openpixelcontrol.org)
 
 
 class Client(object):
-    def __init__(self, server_ip_port, long_connection=True, verbose=False):
+    def __init__(self, server_ip_port, long_connection=True, verbose=False, socket_type="UDP"):
         """Create an OPC client object which sends pixels to an OPC server.
 
         server_ip_port should be an ip:port or hostname:port as a single string.
@@ -72,6 +72,8 @@ class Client(object):
 
         self._socket = None  # will be None when we're not connected
 
+        self.socket_type=socket_type
+
     def _debug(self, m):
         if self.verbose:
             print('    %s' % str(m))
@@ -82,18 +84,35 @@ class Client(object):
         Return True on success or False on failure.
 
         """
+
         if self._socket:
             self._debug('_ensure_connected: already connected, doing nothing')
             return True
 
         try:
             self._debug('_ensure_connected: trying to connect...')
-            self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+
+
+            # print("forcing UDP")
+            # self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP
+
+            if self.socket_type == "TCP":
+                print("USING TCP")
+                self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # TCP
+            elif self.socket_type == "UDP":
+                print("USING UDP")
+                self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP
+            else:
+                print("Invalid socket string.")
+                self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP
+
             self._socket.settimeout(1)
             self._socket.connect((self._ip, self._port))
             self._debug('_ensure_connected:    ...success')
             return True
         except socket.error:
+            print("gotSocketError")
             self._debug('_ensure_connected:    ...failure')
             self._socket = None
             return False
@@ -127,7 +146,7 @@ class Client(object):
             0 is a special value which means "all channels".
 
         pixels: A list of 3-tuples representing rgb colors.
-            Each value in the tuple should be in the range 0-255 inclusive. 
+            Each value in the tuple should be in the range 0-255 inclusive.
             For example: [(255, 255, 255), (0, 0, 0), (127, 0, 0)]
             Floats will be rounded down to integers.
             Values outside the legal range will be clamped.
