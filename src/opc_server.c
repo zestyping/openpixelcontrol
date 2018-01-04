@@ -50,7 +50,7 @@ int opc_listen(u16 port) {
     sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
   }
   else {
-    fprintf(stderr, "Using transport: TCP\n", transport);
+    fprintf(stderr, "Defaulting to transport: TCP\n", transport);
     sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
     strcpy(transport, "TCP");
   }
@@ -126,14 +126,28 @@ u8 opc_receive(opc_source source, opc_handler* handler, u32 timeout_ms) {
   select(nfds, &readfds, NULL, NULL, &timeout);
   if (info->listen_sock >= 0 && FD_ISSET(info->listen_sock, &readfds)) {
     /* Handle an inbound connection. */
-    info->sock = accept(
-        info->listen_sock, (struct sockaddr*) &(address), &address_len);
-    inet_ntop(AF_INET, &(address.sin_addr), buffer, 64);
-    fprintf(stderr, "OPC: Client connected from %s\n", buffer);
-    close(info->listen_sock);
-    info->listen_sock = -1;
-    info->header_length = 0;
-    info->payload_length = 0;
+    if (strcmp(transport, "TCP") == 0){
+      fprintf(stderr, "Accept TCP connection\n");
+      info->sock = accept(
+          info->listen_sock, (struct sockaddr *)&(address), &address_len);
+      inet_ntop(AF_INET, &(address.sin_addr), buffer, 64);
+      fprintf(stderr, "OPC: Client connected from %s\n", buffer);
+      close(info->listen_sock);
+      info->listen_sock = -1;
+      info->header_length = 0;
+      info->payload_length = 0;
+    }
+    else if (strcmp(transport, "UDP") == 0){
+      fprintf(stderr, "UDP is connectionless. %s\n", buffer);
+      info->sock = info->listen_sock;
+      info->listen_sock = -1;
+      info->header_length = 0;
+      info->payload_length = 0;
+    }
+    else {
+      fprintf(stderr, "Invalid Transport\n");
+      exit(1);
+    }
   } else if (info->sock >= 0 && FD_ISSET(info->sock, &readfds)) {
     /* Handle inbound data on an existing connection. */
     if (info->header_length < 4) {  /* need header */
