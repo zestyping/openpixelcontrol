@@ -137,6 +137,7 @@ u8 opc_receive(opc_source source, opc_handler* handler, u32 timeout_ms) {
       info->header_length = 0;
       info->payload_length = 0;
     }
+    // Logic for handling data inbound on UDP connection
     else if (strcmp(transport, "UDP") == 0){
       fprintf(stderr, "UDP is connectionless. %s\n", buffer);
       info->sock = info->listen_sock;
