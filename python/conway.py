@@ -20,7 +20,7 @@ parser = optparse.OptionParser()
 parser.add_option('-s', '--server', dest='server', default='127.0.0.1:7890',
                     action='store', type='string',
                     help='ip and port of server')
-parser.add_option('-f', '--fps', dest='fps', default=5,
+parser.add_option('-f', '--fps', dest='fps', default=10,
                     action='store', type='int',
                     help='frames per second')
 options, args = parser.parse_args()
@@ -31,42 +31,41 @@ Y_DIM = 25
 def print_board(board):
     for x in range(X_DIM):
         for y in range(Y_DIM):
-            if board[x*X_DIM+y]==1:
+            if board[x+y*X_DIM]==1:
                 print 'X',
             else:
                 print '.',
         print
 
 def rand_board():
-    board = ['0'] * X_DIM * Y_DIM
+    board = [0] * X_DIM * Y_DIM
     for x in range(X_DIM):
         for y in range(Y_DIM):
-            if not random.randint(0,3):
-                board[x*X_DIM+y] = 1
+            if not random.randint(0,2):
+                board[x+y*X_DIM] = 1
     return board
 
 def count_cell_neighbor(x,y, board):
     neighbor_count = 0
-    for nei_x in range(3):
-        if (x == 0 and nei_x == 0) or (x == (X_DIM-1) and nei_x == 2):
+    for nei_x in range(-1,2):
+        if (x+nei_x<0) or (x+nei_x>=X_DIM):
             continue
-        for nei_y in range(3):
-            if (y == 0 and nei_y == 0) or (y == (Y_DIM-1) and nei_y == 2):
+        for nei_y in range(-1,2):
+            if (y+nei_y<0) or (y+nei_y>=Y_DIM) or (nei_x == 0 and nei_y == 0):
                 continue
-            if board[(x-1+nei_x)*X_DIM+y-1+nei_y] == 1:
-                neighbor_count += 1
+            neighbor_count += board[(x+nei_x)+(y+nei_y)*X_DIM]
     return neighbor_count
 
 def tick(board):
-    new_board = ['0'] * X_DIM * Y_DIM
+    new_board = board[:]
     for x in range(X_DIM):
         for y in range(Y_DIM):
             n = count_cell_neighbor(x,y, board)
             if n < 2 or n > 3:
-                new_board[x*X_DIM+y] = 0
-            elif n == 3 or (n == 2 and board[x*X_DIM+y] == 1):
-                new_board[x*X_DIM+y] = 1
-    return new_board
+                new_board[x+y*X_DIM] = 0
+            elif n == 3:
+                new_board[x+y*X_DIM] = 1
+    return new_board	
 
 def pixelify_board(board):
     pixels = []
