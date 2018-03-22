@@ -9,17 +9,29 @@ under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 CONDITIONS OF ANY KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations under the License. */
 
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#define _USE_MATH_DEFINES
+#include <math.h>
+
+#ifdef _WIN32
+#include <io.h>
+#include "win32/getopt.h"
+#else
 #include <unistd.h>
+#endif // !_WIN32
+
 #include <string.h>
 #include <sys/stat.h>
+
 #ifdef __APPLE__
 #include <OpenGL/CGLCurrent.h>
 #include <OpenGL/CGLTypes.h>
 #include <OpenGL/OpenGL.h>
 #include <GLUT/glut.h>
+#elif _WIN32
+#include <glut.h>
 #else
 #include <GL/glut.h>
 #endif
@@ -177,7 +189,7 @@ void draw_axes() {
   glEnd();
 }
 
-void display() {
+void display(void) {
   int i;
   shape* sh;
 
@@ -273,7 +285,7 @@ void receive_frames() {
   }
 }
 
-void idle() {
+void idle(void) {
   receive_frames();
 }
 
@@ -415,7 +427,8 @@ void usage(char* prog_name) {
 }
 
 int main(int argc, char** argv) {
-  u16 port;
+  u16 port = 0;
+  int ret = 0;
 
   glutInit(&argc, argv);
 
@@ -460,8 +473,27 @@ int main(int argc, char** argv) {
       usage(argv[0]);
   }
   init(layouts, num_channels);
+
+#ifdef _WIN32
+  // Init winsock
+  {
+	  WORD wVersionRequested;
+	  WSADATA wsaData;
+	  int err;
+	  wVersionRequested = MAKEWORD(2, 2);
+	  err = WSAStartup(wVersionRequested, &wsaData);
+	  if (err != 0) {
+		  printf("WSAStartup failed with error: %d\n", err);
+		  ret = -1; goto fail;
+	  }
+  }
+#endif
+
   port = port ? port : OPC_DEFAULT_PORT;
-  source = opc_new_source(port);
+  if ((source = opc_new_source(port) < 0)) {
+	  fprintf(stderr, "Failed to start server\n");
+	  ret = -1; goto fail;
+  }
 
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
   glutCreateWindow("OPC");
@@ -482,5 +514,10 @@ int main(int argc, char** argv) {
 #endif
 
   glutMainLoop();
-  return 0;
+
+fail:
+#ifdef _WIN32
+  WSACleanup();
+#endif
+  return ret;
 }

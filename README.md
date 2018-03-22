@@ -32,11 +32,11 @@ repository includes these programs:
 To build these programs, run "make" and then look in the bin/ directory.
 
 
-Quickstart (simulator)
-----------------------
+Quickstart (simulator on Linux/OSX)
+-----------------------------------
 
 **Step 1.** If you're using Linux, first get the dependencies you need
-(Mac users skip to step 2):
+(**OSX users skip to step 2**):
 
     apt-get install mesa-common-dev freeglut3-dev
 
@@ -46,6 +46,38 @@ Quickstart (simulator)
     bin/gl_server -l layouts/freespace.json
 
 **Step 3.** In another terminal window, send colors to the simulator:
+
+    python/raver_plaid.py
+
+
+Quickstart (simulator on Windows)
+---------------------------------
+
+Install CMake: https://cmake.org/
+Install Visual Studio: https://www.visualstudio.com/
+
+NOTE! Assuming use of **git bash** below, but normal **cmd.exe** works as well.
+
+**Step 1.** Download and unpack GLUT in a known path (For example `c:\glut\`):
+
+https://www.opengl.org/resources/libraries/glut/glutdlls37beta.zip
+Or google for "glut windows" if above URL is out of date. You want `glut32.lib`, `glut32.dll` and `glut.h`.
+
+**Step 2.** Generate the CMake project, specify the **full absolute path** to the directory were you unpacked GLUT:
+
+    mkdir build
+    cd build
+    cmake -DGLUT_DIR=c:/glut/ ..  # NOTE that you should use / not \ for the paths!
+
+**Step 3.** Open the Visual Studio Solution and build:
+
+    start openpixelcontrol.sln
+
+**Step 4.** After compiling you can run it in the terminal window (assuming default build type Debug):
+
+    bin/Debug/gl_server.exe -l ../layout/freespace.json
+
+**Step 6.** In another terminal window, send colors to the simulator:
 
     python/raver_plaid.py
 
