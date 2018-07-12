@@ -39,18 +39,34 @@ int opc_listen(u16 port) {
   int sock;
   int one = 1;
 
-  sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+  // use TCP
+  if ( strcmp(transport, "TCP") == 0 ){
+    fprintf(stderr, "Using transport: %s\n", transport);
+    sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+  }
+  // use UDP
+  else if ( strcmp(transport, "UDP") == 0 ){
+    fprintf(stderr, "Using transport: %s\n", transport);
+    sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+  }
+  else {
+    fprintf(stderr, "Defaulting to transport: TCP\n", transport);
+    sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+    strcpy(transport, "TCP");
+  }
+
   setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
 
   address.sin_family = AF_INET;
   address.sin_port = htons(port);
-  bzero(&address.sin_addr, sizeof(address.sin_addr));
+  // bzero(&address.sin_addr, sizeof(address.sin_addr)); // zeros.. fill address later?
+  address.sin_addr.s_addr = inet_addr("127.0.0.1"); // for now just set explicitly
   if (bind(sock, (struct sockaddr*) &address, sizeof(address)) != 0) {
     fprintf(stderr, "OPC: Could not bind to port %d: ", port);
     perror(NULL);
     return -1;
   }
-  if (listen(sock, 0) != 0) {
+  if (listen(sock, 0) != 0 && (strcmp(transport, "TCP") == 0) ) { // only relevant for TCP
     fprintf(stderr, "OPC: Could not listen on port %d: ", port);
     perror(NULL);
     return -1;
@@ -110,14 +126,29 @@ u8 opc_receive(opc_source source, opc_handler* handler, u32 timeout_ms) {
   select(nfds, &readfds, NULL, NULL, &timeout);
   if (info->listen_sock >= 0 && FD_ISSET(info->listen_sock, &readfds)) {
     /* Handle an inbound connection. */
-    info->sock = accept(
-        info->listen_sock, (struct sockaddr*) &(address), &address_len);
-    inet_ntop(AF_INET, &(address.sin_addr), buffer, 64);
-    fprintf(stderr, "OPC: Client connected from %s\n", buffer);
-    close(info->listen_sock);
-    info->listen_sock = -1;
-    info->header_length = 0;
-    info->payload_length = 0;
+    if (strcmp(transport, "TCP") == 0){
+      fprintf(stderr, "Accept TCP connection\n");
+      info->sock = accept(
+          info->listen_sock, (struct sockaddr *)&(address), &address_len);
+      inet_ntop(AF_INET, &(address.sin_addr), buffer, 64);
+      fprintf(stderr, "OPC: Client connected from %s\n", buffer);
+      close(info->listen_sock);
+      info->listen_sock = -1;
+      info->header_length = 0;
+      info->payload_length = 0;
+    }
+    // Logic for handling data inbound on UDP connection
+    else if (strcmp(transport, "UDP") == 0){
+      fprintf(stderr, "UDP is connectionless. %s\n", buffer);
+      info->sock = info->listen_sock;
+      info->listen_sock = -1;
+      info->header_length = 0;
+      info->payload_length = 0;
+    }
+    else {
+      fprintf(stderr, "Invalid Transport\n");
+      exit(1);
+    }
   } else if (info->sock >= 0 && FD_ISSET(info->sock, &readfds)) {
     /* Handle inbound data on an existing connection. */
     if (info->header_length < 4) {  /* need header */
@@ -139,8 +170,14 @@ u8 opc_receive(opc_source source, opc_handler* handler, u32 timeout_ms) {
       if (info->header_length == 4 &&
           info->payload_length == payload_expected) {  /* payload complete */
         if (info->header[1] == OPC_SET_PIXELS) {
+          if (strcmp(transport, "UDP") == 0){
+          handler(info->header[0], payload_expected/3,
+                  (pixel*) ((void*)info->payload + 4) ); // a hack...
+          }
+          else if ( strcmp(transport, "TCP") == 0 ){
           handler(info->header[0], payload_expected/3,
                   (pixel*) info->payload);
+          }
         }
         info->header_length = 0;
         info->payload_length = 0;

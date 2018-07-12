@@ -27,3 +27,4 @@ bin/
 # Kate temporary files
 *~
 *.kate-swp
+.vscode

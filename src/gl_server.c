@@ -31,17 +31,18 @@ opc_source source = -1;
 int verbose = 0;
 
 // Camera parameters
-#define FOV_DEGREES 20
+#define FOV_DEGREES 40
 int orbiting = 0, dollying = 0;
 double start_angle, start_elevation, start_distance;
 int start_x, start_y;
 double orbit_angle = 192.0;  // camera orbit angle, degrees
 double camera_elevation = -15;  // camera elevation angle, degrees
-double camera_distance = 16.0;  // distance from origin, metres
+// double camera_distance = 16.0;  // distance from origin, metres
+double camera_distance = 100.0;  // distance from origin, metres
 double camera_aspect = 1.0;  // will be updated to match window aspect ratio
 
 // Shape parameters
-#define SHAPE_THICKNESS 0.06  // thickness of points and lines, metres
+#define SHAPE_THICKNESS 0.6  // thickness of points and lines, metres
 
 #define MAX_CHANNELS 10
 int channel_offsets[MAX_CHANNELS];
@@ -338,7 +339,7 @@ void load_layout(char* filename, int channel) {
   cJSON* start;
   cJSON* x2;
   int i = 0;
-  
+
   buffer = read_file(filename);
   if (buffer == NULL) {
 	  fprintf(stderr, "Unable to open '%s'\n", filename);
@@ -425,7 +426,7 @@ int main(int argc, char** argv) {
   int opt;
   char* layouts[MAX_CHANNELS];
 
-  while ((opt = getopt(argc, argv, ":hl:p:")) != -1)
+  while ((opt = getopt(argc, argv, ":hl:p:t:")) != -1)
   {
       switch (opt)
       {
@@ -439,6 +440,15 @@ int main(int argc, char** argv) {
           break;
       case 'p':
           port = strtol(optarg, NULL, 10);
+          break;
+      case 't':
+          if ( (strcmp(optarg, "UDP") == 0) || (strcmp(optarg, "TCP") == 0) ){
+            strcpy(transport, optarg);
+          }
+          else {
+            fprintf(stderr, "Transport can be UDP or TCP\n");
+            exit(1);
+          }
           break;
       case ':':
           fprintf(stderr, "Missing argument to option: '%c'\n", optopt);
