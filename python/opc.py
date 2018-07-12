@@ -103,6 +103,8 @@ class Client(object):
             elif self.socket_type == "UDP":
                 print("USING UDP")
                 self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP
+                self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+
             else:
                 print("Invalid socket string.")
                 self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP
