@@ -152,8 +152,10 @@ print
 n_pixels = len(coordinates)
 random_values = [random.random() for ii in range(n_pixels)]
 start_time = time.time()
+t = 0
 while True:
-    t = time.time() - start_time
+    #t = time.time() - start_time
+    t += (5.0/options.fps)
     pixels = [pixel_color(t*0.6, coord, ii, n_pixels, random_values) for ii, coord in enumerate(coordinates)]
     client.put_pixels(pixels, channel=0)
     time.sleep(1 / options.fps)

@@ -61,14 +61,14 @@ print('')
 print('    sending pixels forever (control-c to exit)...')
 print('')
 
-n_pixels = 1250  # number of pixels in the included "wall" layout
+n_pixels = 2500  # number of pixels in the included "wall" layout
 fps = 60         # frames per second
 
 # how many sine wave cycles are squeezed into our n_pixels
 # 24 happens to create nice diagonal stripes on the wall layout
-freq_r = 24
-freq_g = 24
-freq_b = 24
+freq_r = 48
+freq_g = 48
+freq_b = 48
 
 # how many seconds the color sine waves take to shift through a complete cycle
 speed_r = 7
