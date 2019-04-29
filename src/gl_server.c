@@ -415,7 +415,7 @@ void usage(char* prog_name) {
 }
 
 int main(int argc, char** argv) {
-  u16 port;
+  u16 port = 0;
 
   glutInit(&argc, argv);
 
