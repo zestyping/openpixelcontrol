@@ -24,19 +24,19 @@ bin/dummy_server: src/dummy_server.c src/opc_server.c src/opc.h src/types.h
 
 bin/tcl_server: src/tcl_server.c src/opc_server.c src/opc.h src/types.h src/spi.c src/spi.h src/cli.c src/cli.h
 	mkdir -p bin
-	gcc ${CFLAGS} -o $@ src/tcl_server.c src/opc_server.c src/cli.c
+	gcc ${CFLAGS} -o $@ src/tcl_server.c src/opc_server.c src/spi.c src/cli.c
 
 bin/apa102_server: src/apa102_server.c src/opc_server.c src/opc.h src/types.h src/spi.c src/spi.h src/cli.c src/cli.h
 	mkdir -p bin
-	gcc ${CFLAGS} -o $@ src/apa102_server.c src/opc_server.c src/cli.c
+	gcc ${CFLAGS} -o $@ src/apa102_server.c src/opc_server.c src/spi.c src/cli.c
 
 bin/ws2801_server: src/ws2801_server.c src/opc_server.c src/opc.h src/types.h src/spi.c src/spi.h src/cli.c src/cli.h
 	mkdir -p bin
-	gcc ${CFLAGS} -o $@ src/ws2801_server.c src/opc_server.c src/cli.c
+	gcc ${CFLAGS} -o $@ src/ws2801_server.c src/opc_server.c src/spi.c src/cli.c
 
 bin/lpd8806_server: src/lpd8806_server.c src/opc_server.c src/opc.h src/types.h src/spi.c src/spi.h src/cli.c src/cli.h
 	mkdir -p bin
-	gcc ${CFLAGS} -o $@ src/lpd8806_server.c src/opc_server.c src/cli.c
+	gcc ${CFLAGS} -o $@ src/lpd8806_server.c src/opc_server.c src/spi.c src/cli.c
 
 bin/gl_server: src/gl_server.c src/opc_server.c src/opc.h src/types.h src/cJSON.c src/cJSON.h
 	mkdir -p bin
